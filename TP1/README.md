@@ -1,7 +1,7 @@
 # TP1 - Título do Trabalho (a definir)
 
 ## Autor
-- Nome:Idy Saquina Carlos
+- Nome: Idy Saquina Carlos
 - ID: A105237
 - Foto:  
   ![Minha Foto](minhafoto.jpg)  
