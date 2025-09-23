@@ -13,22 +13,24 @@
 #^(?:(?!011)[01])+$  
 
 ## Explicação:
-- `^(?!.*011)` — garante que não existe a substring proibida.  
+- `^` — começa a analisar do início.
+- `(?!.*011)` — garante que não existe a substring proibida.  
 - `[01]*` — aceita qualquer combinação de 0s e 1s.  
-- `$` — final da string.  
+- `$` — termina no fim da string, garantindo que toda a string respeita a regra. 
 
 
-## Exemplos de teste
+### Exemplos de teste
 
-### Strings válidas (devem casar):
+## Strings válidas (devem casar):
 - `1111111`
 - `000001`
 - `1111010101000`
 
-### Strings inválidas (não devem casar):
+## Strings inválidas (não devem casar):
 - `111010110111`
 - `011`
 - `00000001100000000`
 
 ## Lista de Resultados
-- [Regex ](regex.py)
+- [regex.py](regex.py) — programa em Python que valida strings a partir do ficheiro `teste.txt`
+- [teste.txt](teste.txt) — ficheiro com exemplos de strings válidas e inválidas
