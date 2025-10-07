@@ -10,31 +10,13 @@
 Este trabalho consiste em criar um pequeno conversor de Markdown para HTML em Python, suportando os elementos básicos descritos na "Basic Syntax" da Cheat Sheet: cabeçalhos (#, ##, ###), texto em bold, itálico, listas numeradas, links e imagens.
 
 ## Funcionalidades implementadas
-- Cabeçalhos: #, ##, ### → <h1>, <h2>, <h3>
-- Texto em negrito: **texto** → <b>texto</b>  
-- Texto em itálico: *texto* → <i>texto</i>  
-- Listas numeradas: 1. item → <ol><li>item</li></ol>
-- Links: [texto](url) → <a href="url">texto</a>
-- Imagens: ![alt](src) → <img src="src" alt="alt"/>
+O programa lê o Markdown linha a linha.
 
-## Explicação:
-Cabeçalhos (#, ##, ###) → <h1>, <h2>, <h3>
-Detectados com regex no início da linha; o número de # indica o nível do cabeçalho.
+Classifica cada linha (cabeçalho, lista, texto normal).
 
-Negrito (**texto**) → <b>texto</b>
-Regex detecta **...** e substitui por <b>...</b>; aplicado antes do itálico para evitar conflitos.
+Processa elementos inline na ordem: imagem → link → negrito → itálico.
 
-Itálico (*texto*) → <i>texto</i>
-Regex detecta *...* e substitui por <i>...</i>; aplicado após o negrito.
-
-Listas numeradas (1. item) → <ol><li>item</li></ol>
-Linhas numeradas são acumuladas; ao terminar a sequência, envolvidas em <ol>...</ol>.
-
-Links ([texto](url)) → <a href="url">texto</a>
-Regex captura texto e URL; substitui por <a href="url">texto</a>.
-
-Imagens (![alt](src)) → <img src="src" alt="alt"/>
-Regex detecta ![alt](src); substituídas por <img src="src" alt="alt"/>; processadas antes dos links.
+Garante que listas são abertas e fechadas corretamente.
 
 
 ## Lista de Resultados
