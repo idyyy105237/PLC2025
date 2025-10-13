@@ -24,4 +24,5 @@ O lexer lê o conteúdo de um ficheiro de consulta SPARQL e gera como saída uma
 
 ## Execução
 $ python gen_tokenizer2.py tokens_SPARQL.json | Out-File -Encoding utf8 analex_SPARQL.py
+
 $ Get-Content query_SPARQL.txt | python analex_SPARQL.py
