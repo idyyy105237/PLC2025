@@ -1,0 +1,62 @@
+[
+    {
+        "id": "COMMENT",
+        "expreg": "\\#[^\\n]*"
+    },
+    {
+        "id": "SELECT",
+        "expreg": "select"
+    },
+    {
+        "id": "WHERE",
+        "expreg": "where"
+    },
+    {
+        "id": "LIMIT",
+        "expreg": "LIMIT"
+    },
+    {
+        "id": "RDFTYPE",
+        "expreg": "\\ba\\b"
+    },
+    {
+        "id": "VAR",
+        "expreg": "\\?[a-zA-Z]\\w*"
+    },
+    {
+        "id": "LITERAL",
+        "expreg": "\"[^\"]*\"(@[a-z]{2})?"
+    },
+    {
+        "id": "URI",
+        "expreg": "[a-zA-Z_]\\w*:[a-zA-Z_]\\w*"
+    },
+    {
+        "id": "INT",
+        "expreg": "\\d+"
+    },
+    {
+        "id": "ABRE_CHAVES",
+        "expreg": "\\{"
+    },
+    {
+        "id": "FECHA_CHAVES",
+        "expreg": "\\}"
+    },
+            {
+        "id": "PONTO",
+        "expreg": "\\."
+    },
+    {
+        "id": "SKIP",
+        "expreg": "[ \\t]"
+    },
+    {
+        "id": "NEWLINE",
+        "expreg": "\\n"
+    },
+    {
+        "id": "ERRO",
+        "expreg": "."
+    }
+]
