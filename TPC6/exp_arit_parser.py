@@ -36,6 +36,7 @@ def MaisMenos():
         espera(operador)
         Literal()
         MaisMenos()
+    # Eps → nada a fazer
 
 def Literal():
     Fator()
@@ -47,6 +48,7 @@ def MultDiv():
         espera(operador)
         Fator()
         MultDiv()
+    # Eps → nada a fazer
 
 def Fator():
     if token and token.type == "INT":
@@ -69,11 +71,12 @@ def analisar(expr):
     S()
     if token is not None:
         raise ValueError(f"Símbolos restantes após análise: {token}")
-    return "Expressão válida ✅"
+    return "Expressão válida "
 
 print(analisar("5+6"))
 print(analisar("(7-2)*(8/3)"))
 print(analisar("(3-7)"))
 print(analisar("3+2*5"))
 print(analisar("(3-7)*2"))
+
 print(analisar("(3-7)/2"))
