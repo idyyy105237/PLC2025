@@ -17,11 +17,15 @@ O **analisador léxico** identifica os tokens (números, operadores e parêntese
 
 A saída do analisador sintático indica se a expressão é válida ou não, permitindo construir posteriormente uma árvore sintática ou avaliar a expressão.
 
-## A gramática utilizada segue esta hierarquia:
+### A gramática utilizada segue esta hierarquia:
 S         -> Literal MaisMenos
+
 MaisMenos -> '+' Literal MaisMenos | '-' Literal MaisMenos | Eps
+
 Literal   -> Fator MultDiv
+
 MultDiv   -> '*' Fator MultDiv | '/' Fator MultDiv | Eps
+
 Fator     -> Int | '(' S ')'
 
 ---
