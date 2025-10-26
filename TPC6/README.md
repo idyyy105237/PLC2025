@@ -33,8 +33,8 @@ Fator      -> Int | '(' S ')'
 ## Lista de Resultados
 | Descrição                                   | Ficheiro                          |
 | ------------------------------------------- | --------------------------------- |
-| Analisador Léxico (tokenização)             | [`lexer_exp_arit.py`](./lexer_exp_arit.py) |
-| Analisador Sintático Recursivo Descendente  | [`parser_exp_arit.py`](./parser_exp_arit.py) |
+| Analisador Léxico (tokenização)             | [`exp_arit_lexer.py`](./exp_arit_lexer.py) |
+| Analisador Sintático Recursivo Descendente  | [`exp_arit_parser.py`](./exp_arit_parser.py) |
 
 ---
 
