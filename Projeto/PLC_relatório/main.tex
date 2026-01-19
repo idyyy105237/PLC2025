@@ -1,0 +1,3639 @@
+\documentclass[12pt,a4paper]{report}
+
+% --------------------
+% Pacotes
+% --------------------
+\usepackage[portuguese]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{setspace}
+\usepackage{geometry}
+\usepackage{titlesec}
+\usepackage{syntax}
+
+
+
+\titleformat{\chapter}[display]
+  {\normalfont\huge\bfseries}
+  {}                          
+  {0pt}                       
+  {\Huge}              
+
+
+% Margens semelhantes às do relatório
+\geometry{
+    top=3cm,
+    bottom=3cm,
+    left=3cm,
+    right=3cm
+}
+
+% --------------------
+% Espaçamento
+% --------------------
+\onehalfspacing
+
+% --------------------
+% Remover numeração da capa
+% --------------------
+\pagenumbering{gobble}
+
+\usepackage{listings}
+\usepackage{xcolor}
+
+\lstset{
+    language=Python,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    stringstyle=\color{red},
+    numbers=left,
+    numberstyle=\tiny,
+    stepnumber=1,
+    frame=single,
+    breaklines=true,
+    captionpos=b
+}
+
+
+
+\begin{document}
+
+% =====================================================
+% CAPA
+% =====================================================
+\begin{titlepage}
+    \begin{center}
+
+        % Logótipo
+        \vspace*{1cm}
+        \includegraphics[width=3cm]{UM.jpg}
+
+        \vspace{1.8cm}
+
+        % Título principal
+        {\LARGE \textbf{Processamento de Linguagens e Compiladores}}\\[0.4cm]
+
+        {\large
+        LCC -- 3º Ano -- 1º Semestre\\
+        Universidade do Minho
+        }
+
+        \vspace{2.8cm}
+
+        % Título do trabalho
+        {\Large \textbf{Construção de um Compilador para Pascal Standard}}\\[0.4cm]
+
+        {\large Grupo 03}
+
+        \vspace{4cm}
+
+        % Autores e números 
+        \begin{minipage}{0.45\textwidth}
+            \centering
+            \textit{Trabalho realizado por:}\\[0.3cm]
+            Catarina Machado Barbosa\\
+            Idy Saquina Carlos\\
+            José Afonso da Silva Miranda
+        \end{minipage}
+        \hfill
+        \begin{minipage}{0.45\textwidth}
+            \centering
+            \textit{Número:}\\[0.3cm]
+            A108558\\
+            A105237\\
+            A102933
+        \end{minipage}
+
+        \vfill
+
+    \end{center}
+\end{titlepage}
+
+
+% =====================================================
+% ÍNDICE
+% =====================================================
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+
+% =====================================================
+% CONTEÚDO
+% =====================================================
+\pagenumbering{arabic}
+
+
+% ----------------------------------------------------------------------
+\chapter{Introdução}
+O presente relatório descreve o desenvolvimento de um compilador para a linguagem
+\textit{Pascal Standard}, realizado no âmbito da unidade curricular
+\textit{Processamento de Linguagens e Compiladores} do 3.º ano da Licenciatura em
+Ciências da Computação da Universidade do Minho. Este trabalho tem como principal
+objetivo a aplicação prática dos conceitos teóricos abordados ao longo da unidade
+curricular, nomeadamente as diferentes fases do processo de compilação.
+
+O compilador desenvolvido suporta um subconjunto representativo da linguagem Pascal,
+incluindo declarações de variáveis simples e de arrays, expressões aritméticas,
+relacionais e lógicas, estruturas de controlo condicionais e iterativas
+(\textit{if}, \textit{while} e \textit{for}), bem como operações básicas de entrada e
+saída através das instruções \textit{readln} e \textit{writeln}. O processo de
+compilação termina na geração de código para uma máquina virtual, permitindo a
+execução dos programas fonte após uma compilação bem-sucedida.
+
+A implementação do compilador foi realizada em Python, recorrendo à biblioteca
+\textit{PLY (Python Lex-Yacc)} para a construção do analisador léxico e do analisador
+sintático. A fase de análise semântica foi desenvolvida com base numa tabela de
+símbolos, permitindo detetar erros como a utilização de variáveis não declaradas,
+declarações duplicadas, incompatibilidades de tipos e acessos inválidos a arrays.
+Posteriormente, foi implementado um gerador de código responsável por traduzir a
+árvore sintática anotada em instruções para a máquina virtual, respeitando a
+semântica da linguagem.
+
+Este relatório encontra-se organizado por capítulos: no Capítulo 2 é apresentada
+uma visão geral do compilador e das suas funcionalidades; no Capítulo 3 é descrita a
+arquitetura do projeto, detalhando as fases de análise léxica, sintática, semântica e
+geração de código; no Capítulo 4 é realizada uma avaliação experimental do sistema,
+através de vários exemplos de teste; por fim, no Capítulo 5 são apresentadas as
+conclusões e possíveis melhorias futuras.
+
+
+% ----------------------------------------------------------------------
+\chapter{Visão Geral do Compilador}
+O compilador desenvolvido no âmbito deste trabalho tem como objetivo traduzir
+programas escritos em \textit{Pascal Standard} para código executável numa máquina
+virtual, seguindo a arquitetura clássica de um compilador. O processo de compilação
+encontra-se dividido em várias fases bem definidas, permitindo uma separação clara
+de responsabilidades e facilitando a deteção e correção de erros.
+
+A primeira fase corresponde à \textbf{análise léxica}, na qual o código fonte é
+processado caractere a caractere, sendo convertido numa sequência de tokens. Estes
+tokens representam as unidades básicas da linguagem, como identificadores, palavras
+reservadas, operadores, constantes numéricas e símbolos de pontuação. Esta fase é
+responsável por eliminar comentários e espaços em branco irrelevantes, bem como por
+identificar erros lexicais.
+
+De seguida, ocorre a \textbf{análise sintática}, cujo objetivo é verificar se a
+sequência de tokens obtida respeita a gramática da linguagem Pascal suportada pelo
+compilador. Nesta fase é construída uma \textit{Árvore Sintática Abstrata} (AST),
+que representa de forma estruturada o programa fonte, preservando apenas a
+informação relevante para as fases seguintes do processo de compilação.
+
+Após a construção da AST, o compilador realiza a \textbf{análise semântica}. Esta fase
+tem como principal finalidade garantir que o programa, para além de sintaticamente
+correto, é semanticamente válido. Para tal, é utilizada uma tabela de símbolos onde
+são registadas informações relativas às variáveis, arrays e respetivos tipos. São
+detetados erros como variáveis não declaradas, declarações duplicadas, incompatibilidades
+de tipos, acessos inválidos a arrays e utilização incorreta de estruturas de controlo.
+
+Por fim, na fase de \textbf{geração de código}, a AST anotada é percorrida com o
+objetivo de produzir código para uma máquina virtual. Este código intermédio utiliza
+uma linguagem de baixo nível baseada em instruções de pilha, permitindo a execução
+dos programas compilados. O gerador de código respeita a semântica da linguagem,
+tratando corretamente expressões, ciclos, instruções condicionais e operações de
+entrada e saída.
+
+O compilador foi implementado em Python, recorrendo à biblioteca \textit{PLY
+(Python Lex-Yacc)} para as fases de análise léxica e sintática. A modularização do
+projeto permite que cada fase seja testada de forma independente, contribuindo para
+uma maior robustez e facilidade de manutenção do sistema. Na secção seguinte é
+apresentada em detalhe a arquitetura do projeto, descrevendo o funcionamento de cada
+um dos seus componentes.
+
+% ----------------------------------------------------------------------
+\chapter{Arquitetura do Projeto}
+\section{Lexer}
+% ----------------------------------------------------------------------
+
+A análise léxica constitui a primeira fase do processo de compilação e tem como
+principal objetivo converter o código fonte escrito em \textit{Pascal Standard} numa
+sequência de tokens. Cada token representa uma unidade léxica da linguagem, como
+palavras reservadas, identificadores, constantes, operadores e símbolos de
+pontuação, que serão posteriormente utilizados pelo analisador sintático.
+
+O lexer foi implementado em Python utilizando a biblioteca \textit{PLY (Python
+Lex-Yacc)}, que fornece mecanismos para a definição de tokens através de expressões
+regulares. Para cada tipo de token suportado pela linguagem, foi definida uma regra
+léxica correspondente, permitindo identificar corretamente os diferentes elementos
+do programa fonte.
+
+Entre os tokens reconhecidos encontram-se identificadores, números inteiros,
+operadores aritméticos e relacionais, símbolos de atribuição, delimitadores e
+palavras reservadas da linguagem Pascal, como \textit{program}, \textit{var},
+\textit{begin}, \textit{end}, \textit{if}, \textit{then}, \textit{else},
+\textit{while}, \textit{for}, \textit{to}, \textit{readln} e \textit{writeln}. O lexer
+distingue corretamente palavras reservadas de identificadores, garantindo que estas
+não possam ser utilizadas como nomes de variáveis.
+
+Para além da identificação dos tokens, o analisador léxico é responsável por ignorar
+caracteres irrelevantes, como espaços em branco, tabulações e quebras de linha, bem
+como comentários presentes no código fonte. Adicionalmente, são detetados e
+assinalados erros lexicais sempre que surgem caracteres inválidos ou não reconhecidos
+pela linguagem, contribuindo para uma deteção precoce de erros no processo de
+compilação.
+
+A utilização do \textit{PLY} permite uma integração direta entre o lexer e o parser,
+facilitando a passagem da sequência de tokens para a fase de análise sintática. Esta
+abordagem modular contribui para a clareza do código e para a manutenção do
+compilador, uma vez que alterações ao léxico da linguagem podem ser efetuadas de forma
+isolada, sem impacto direto nas restantes fases do sistema.
+
+% ------------------------------------------------------------
+\subsection{Implementação}
+% ------------------------------------------------------------
+
+
+Inicialmente, começamos por definir um dicionário \texttt{reserved} que é responsável por mapear as palavras-chave da linguagem Pascal Standard, atribuindo a cada uma delas o seu token correspondente.
+
+Este acaba por ser importante, uma vez que permite ao compilador distinguir identificadores genéricos de palavras que são reservadas. 
+
+Assim, para cada palavra chave, que é apresentada em mínusculas (uma vez que aparece assim no código fonte de Pascal), atribui-se o respetivo identificador, em maiúsculas, sendo este posteriormente usado pelo parser.
+
+As palavras reservadas foram: 
+
+\begin{enumerate}
+    \item \textbf{Estrutura do Programa:} 
+    \texttt{program, begin, end;}
+
+    \item \textbf{Declaração de Variáveis e Tipos:} 
+    \texttt{var, integer, real, boolean, string;}
+
+    \item \textbf{Controlo de Fluxo:} 
+    \texttt{if, then, else, while, do, for, to, downto;}
+
+    \item \textbf{Operações Built-in:} 
+    \texttt{readln, writeln, mod, div;}
+
+    \item \textbf{Valores Booleanos:} 
+    \texttt{true, false;}
+
+    \item \textbf{Operadores Lógicos:} 
+    \texttt{and, or, not;}
+
+    \item \textbf{Estruturas de Dados:} 
+    \texttt{array, of.}
+\end{enumerate}
+
+\vspace{1em}
+
+
+De seguida, definimos um tuplo, \texttt{tokens}, que representa todos os tipos de tokens que o lexer será capaz de reconhecer. Entre esses, temos:
+
+
+\begin{enumerate}
+    \item \textbf{Tipos de dados e literais:} 
+    \texttt{INTEGER, REAL,BOOLEAN, STRINGTYPE, NUM (numeros), ID (identificadores), STRING (strings literais);}
+    
+    \item \textbf{Valores booleanos e operadores lógicos:} 
+    \texttt{TRUE, FALSE, AND, OR, NOT;}
+
+    \item \textbf{Palavras-chave da linguagem:} 
+    \texttt{todas as restantes definidas no reserved}
+
+    \item \textbf{Operadores aritméticos:} 
+    \texttt{SOMA (+), SUBTR (-), MULT (*), DIVIDE (/), DIV, MOD;}
+
+    \item \textbf{Operadores relacionais:} 
+    \texttt{IGUAL (=), DIFF (<>), MAIOR (>), MENOR (<), MAIORIGUAL (>=), MENORIGUAL(<=);}
+
+    \item \textbf{Símbolos especiais:} 
+    \texttt{ATRIBUICAO (:=), PONTOEVIRG (;), DOISPONTOS (:), VIRG (,), PONTO (.), LPAREN((), RPAREN ()), LBRACKET ([), RBRACKET (]);}
+
+\end{enumerate}
+
+Posteriormente, cada token simples (soma, subtração, multiplicação, divisão, maior, menor, maior ou igual, menor ou igual, igual, atribuição, intervalo, ponto e vírgula, dois pontos, vírgula, ponto, parênteses curvos e retos abertos e parênteses curvos e retos fechados) é associado a uma expressão regular, responsável por definir a sequência de caracteres que o lexer deve reconhecer. 
+
+\vspace{2em}
+
+
+De seguida, definimos funções responsáveis por interpretar os tokens complexos, cuja estrutura não é representada através de uma expressão simples. 
+
+\vspace{1em}
+A função \verb|t_STRING| utiliza uma expressão, \verb|\'([^\\']|\\.)*\'|, para reconhecer sequências de caracteres, sendo essas delimitadas por um ‘ . Ainda assim, essa função remove essas aspas que se encontram nos extremos, o que preserva apenas o conteúdo da string. 
+
+\vspace{1em}
+
+A função \verb|t_NUM| é responsável por identificar os números, inteiros ou reais, através da expressão definida: \verb|\d+(\.\d+)?|. É ainda responsável por converter esse valor para o tipo apropriado: caso contenha um “.”, converte-o para um float e, caso não tenha, para um int. 
+
+\vspace{1em}
+
+A função \verb|t_ID| reconhece identificadores, que, por exemplo, podem ser nomes de variáveis, de funções, etc. Para isso, utiliza uma expressão regular, \verb|[A-Za-z_][A-Za-z0-9_]*|, e, para além disso, consulta o dicionário das palavras reservadas, de modo a distinguir id’s de palavras chaves.
+
+\vspace{1em}
+
+Decidimos ainda tratar os três tipos de comentários que são admitidos pelo Pascal Standard através de três diferentes funções. 
+
+\vspace{1em}
+
+A função \verb|t_COMMENT1| reconhece comentários do tipo “{ … }”, com recurso à expressão regular \verb|\{[\s\S]*?\}| , descartando tudo o que se encontra dentro desse bloco, e, obviamente, atualizando a contagem correta das linhas
+
+\vspace{1em}
+
+A função \verb|t_COMMENT2| reconhece comentários do tipo “(* … *)”, com recurso à expressão regular \verb|\(\*[\s\S]*?\*\)| , descartando tudo o que se encontra dentro desse bloco, e, obviamente, atualizando a contagem correta das linhas
+
+\vspace{1em}
+
+A função \verb|t_COMMENT3| reconhece comentários do tipo “//”, com recurso à expressão regular \verb|//.*| , descartando tudo o que se encontra nessa linha.
+
+\vspace{1em}
+
+A contagem do número de linhas é feita com recurso à função  \verb|t_newline|, que incrementa o contador para cada quebra de linha, \verb|\n|, que encontra no código fonte.
+
+\vspace{1em}
+
+Ignoramos ainda os espaços em branco, definidos na componente \verb|t_ignore|.
+
+\vspace{1em}
+
+Quanto aos erros léxicos, estes são tratados pela função \verb|t_error| que emite uma mensagem de erro, com o número da linha onde esse ocorreu e o caracter que levou a tal erro,  quando o lexer intercepta um caracter que não reconhece.
+
+\vspace{1em}
+
+Por fim, criamos uma instância do lexer, que vai processar todas as definições anteriores e gerar o analisador léxico. 
+
+
+% ------------------------------------------------------------
+\section{Parser}
+% ------------------------------------------------------------
+
+A análise sintática tem como objetivo verificar se a sequência de tokens produzida
+pelo analisador léxico respeita a gramática da linguagem Pascal suportada pelo
+compilador. Esta fase garante que a estrutura do programa fonte está correta do
+ponto de vista sintático, permitindo a identificação de erros como instruções mal
+formadas ou utilização incorreta de estruturas de controlo.
+
+O parser foi implementado em Python utilizando a biblioteca \textit{PLY
+(Python Lex-Yacc)}, através da definição de uma gramática livre de contexto. As
+regras gramaticais descrevem a estrutura dos programas Pascal, incluindo declarações,
+blocos de instruções, expressões aritméticas e lógicas, bem como as diferentes
+estruturas de controlo suportadas, tais como instruções condicionais e ciclos.
+
+Durante a análise sintática é construída uma Árvore Sintática Abstrata (AST), que
+representa a estrutura do programa de forma hierárquica. A AST elimina detalhes
+irrelevantes da sintaxe concreta, preservando apenas a informação necessária para as
+fases seguintes do processo de compilação, nomeadamente a análise semântica e a
+geração de código.
+
+O parser foi desenvolvido de forma a permitir a deteção e sinalização de erros
+sintáticos, indicando situações em que a sequência de tokens não corresponde a
+nenhuma regra da gramática definida. Sempre que possível, o parser tenta recuperar de
+erros simples, permitindo a continuação da análise e a identificação de múltiplos
+erros num único programa.
+
+A separação clara entre as regras do lexer e do parser, aliada à utilização do PLY,
+contribui para uma implementação modular e de fácil manutenção. Alterações à
+gramática da linguagem podem ser efetuadas de forma localizada, sem impacto direto
+nas restantes fases do compilador.
+
+% ------------------------------------------------------------
+\subsection{Implementação}
+% ------------------------------------------------------------
+
+O ponto principal da implementação do parser foi criar uma gramática que fosse capaz de representar a estrutura dos programas feitos seguindo a linguagem Pascal Standard. No nosso caso, criamos uma gramática independente de contexto. 
+
+\begin{grammar}
+<programa>        ::= \texttt{PROGRAM} \texttt{ID} \texttt{;} <declaracoes> <bloco\_final>
+
+<bloco\_final>    ::= \texttt{BEGIN} <comandos> \texttt{END} \texttt{.}
+
+<declaracoes>     ::= \texttt{VAR} <lista\_declaracoes>
+                   \alt \(\epsilon\)
+
+<lista\_declaracoes> ::= <lista\_declaracoes> <declaracao>
+                      \alt <declaracao>
+
+<declaracao>      ::= <lista\_ids> \texttt{:} <tipo> \texttt{;}
+
+<lista\_ids>      ::= \texttt{ID}
+                   \alt <lista\_ids> \texttt{,} \texttt{ID}
+
+<tipo>            ::= \texttt{INTEGER}
+                   \alt \texttt{REAL}
+                   \alt \texttt{BOOLEAN}
+                   \alt \texttt{STRING\_TYPE}
+                   \alt \texttt{ARRAY} \texttt{[} <intervalo> \texttt{]} \texttt{OF} <tipo>
+
+<intervalo>       ::= \texttt{NUM} \texttt{..} \texttt{NUM}    % token INTERVALO
+
+<comandos>         ::= <comandos> <comando>
+                   \alt <comando>
+
+<comando>          ::= <atribuicao>
+                   \alt <atribuicao\_array>
+                   \alt <comando\_if>
+                   \alt <comando\_while>
+                   \alt <comando\_for>
+                   \alt <comando\_writeln>
+                   \alt <comando\_readln>
+                   \alt <bloco> \texttt{;}    % bloco usado como comando
+
+<bloco>            ::= \texttt{BEGIN} <comandos> \texttt{END}
+
+<expr>             ::= <expr> \texttt{+} <expr>
+                   \alt <expr> \texttt{-} <expr>
+                   \alt <expr> \texttt{*} <expr>
+                   \alt <expr> \texttt{/} <expr>
+                   \alt <expr> \texttt{DIV} <expr>
+                   \alt <expr> \texttt{MOD} <expr>
+                   \alt $\langle$expr$\rangle$ \textit{relop} $\langle$expr$\rangle$
+                   \alt <expr> \texttt{AND} <expr>
+                   \alt <expr> \texttt{OR} <expr>
+                   \alt \texttt{NOT} <expr>
+                   \alt \texttt{-} <expr>
+                   \alt \texttt{(} <expr> \texttt{)}
+                   \alt \texttt{NUM}
+                   \alt \texttt{ID}
+                   \alt \texttt{ID} \texttt{[} <expr> \texttt{]}
+                   \alt \texttt{STRING}
+                   \alt \texttt{TRUE}
+                   \alt \texttt{FALSE}
+                   
+\end{grammar}
+
+
+Todos os programas nessa linguagem começam com um \texttt{PROGRAM} e o nome do programa, fazem declarações e tem um bloco principal, \texttt{bloco\_final}, que contem um \texttt{BEGIN}, um \texttt{END} e, por fim um \texttt{\.}. 
+
+É exatamente isso que definimos nas primeiras duas produções: o programa começa com essa palavra reservada, com um \texttt{ID} referente ao nome dele, com um ponto e virgula a separar, fazendo de seguida as declarações e tendo um bloco principal. 
+
+\vspace{1em}
+
+
+Ora, tendo essa estrutura como base, vamos definir as restantes produções, que são derivadas dessas principais. 
+
+\vspace{1em}
+
+Quando às \texttt{declaracoes} que fazemos inicialmente, nós sabemos que em Pascal essas podem de facto ser feitas, tendo uma ou mais, ou então não serem feitas, o que equivale a não ter nenhuma. Assim, dizemos na gramática que podemos não ter nenhuma, através da produção do vazio, ou então ter declarações, sendo essas definidas em pascal com \texttt{VAR} e tendo, em seguida, a lista de declarações de variáveis que forem feitas.
+
+\vspace{0.5em}
+Essa \texttt{lista\_declaracoes} pode então conter apenas uma declaração de variável, obtida pela produção \texttt{declaracao}, ou então ter mais do que uma declaração, obtida pela produção \texttt{lista\_declaracoes declaracao}. 
+
+\vspace{0.5em}
+Assim, uma \texttt{declaracao} de uma variável é feita através de uma lista de identificadores, ie, o nome das variáveis que estamos a criar, \texttt{:} e o \texttt{tipo} dessas variáveis, sendo que esse pode ser: \texttt{INTEGER}, \texttt{REAL}, \texttt{BOOLEAN}, \texttt{STRING\_TYPE}, ou então um \texttt{ARRAY [ intervalo ] OF tipo} (este intervalo é dado por um \texttt{NUM .. NUM} ). 
+
+\vspace{0.5em}
+Quando à \texttt{lista\_ids}, podemos então definir apenas uma variável, dado pela produção \texttt{ID}, ou definir mais do que uma, com recursão à esquerda, \texttt{lista\_ids , ID}.
+
+\vspace{0.5em}
+
+Dado isso, o parser já consegue então processar a lista de declarações de variáveis. Vamos agora para os \texttt{comandos} efetuados dentro do bloco principal. 
+
+\vspace{0.5em}
+
+Podemos então ter apenas um \texttt{comando} dentro desse bloco, ou então uma lista deles, dada pela produção \texttt{comandos comando}. 
+
+\vspace{0.5em}
+
+Esse \texttt{comando} pode ser uma uma \texttt{atribuicao}, uma \texttt{atribuicao\_array}, um if, \texttt{comando_if}, um ciclo, podendo ser \texttt{comando\_while}, \texttt{comando\_for}, pode ser um \texttt{comando\_writeln} ou um \texttt{comando\_readln}, ou até pode ser outro bloco, \texttt{bloco PONTOEVIRG}, sendo este também derivado em um \texttt{BEGIN comandos END}.
+
+\vspace{0.5em}
+
+Por fim, podemos ter expressões, \texttt{expr}, que podem ser de vários tipos: soma, subtração, multiplicação, divisão, div, mod, operações relacionais (>, <, =, etc…), and, or, not, - (negação), (), NUM, ID, ID[expr] (atribuição a um elemento de um array), STRING, true ou false). 
+
+\vspace{2em}
+
+Assim, passamos então à parte de definir, de facto, as funções que implementam esta gramática. 
+
+Primeiro, definimos a precedência dos operados, que serve para dizer quais, em expressões, são usados / processados primeiro, ie, os que têm precedência maior são usados primeiro. Quando temos operadores com a mesma precedência, vamos associá-los à esquerda, \texttt{left}, ou à direita \texttt{right}. 
+
+Por exemplo, no caso de termos soma e subtrações, como nesta expressão \texttt{a + b - c}, uma vez que usamos left fica \texttt{(a+b) - c}. 
+
+\vspace{1em}
+
+Assim, na lista, quanto mais a cima, maior é a precedência. Então temos a seguinte ordem: primeiro fazemos o \texttt{NOT}, depois as multiplicações e divisões \texttt{MULT, DIVIDE, DIV, MOD}, depois a soma e subtração \texttt{SOMA, SUBTR}, depois os operadores relacionais \texttt{IGUAL, DIFF, MAIOR, etc…}, depois o \texttt{AND}, de seguida o \texttt{OR}, após o \texttt{NEG} e só no fim o \texttt{ELSE}. 
+
+\vspace{1em}
+O \texttt{ELSE} aparecer no final da precedência serve para resolver um problema que obtivemos inicialmente ao implementar a gramática. 
+
+Quando tinhamos \texttt{if} aninhados sem delimitadores explícitos, como por exemplo
+\texttt{if expr then if expr then comando else comando}, surgia ambiguidade, em que o parser não sabia se o \texttt{else} pertencia ao primeiro \texttt{if} ou ao segundo \texttt{if}.
+
+Assim, ao atribuir o \texttt{else} com precedência \texttt{right}, estamos a dizer ao parser que ele tem que associar esse \texttt{else} ao \texttt{if} mais próximo. 
+
+De seguida, vamos implementar de facto as função que executam / definem aquela gramática explicada inicialmente. 
+
+
+Começamos pelas duas produções principais de que falamos, a do inicio do programa e da declaração do bloco principal. 
+
+\vspace{1em}
+
+A função \texttt{p\_programa} implementa a produção inicial. Esta é invocada pelo parser sempre que encontra uma sequência  \texttt{PROGRAM <id> ; <declaracoes> <bloco\_final>}. 
+
+Aqui, os parâmetros \texttt{p[1]}, \texttt{p[2]}, \texttt{p[3]}, \texttt{p[4]} e \texttt{p[5]} correspondem, respetivamente, aos tokens e produções: \texttt{PROGRAM}, \texttt{ID}, \texttt{PONTOEVIRG}, \texttt{declaracoes} e \texttt{bloco\_final}. 
+
+Assim, essa função constrói um nó na AST, sendo esse nó representado pela tupla \texttt{(‘programa’, nome\_programa, declaracoes, bloco\_principal)}, armazenando-o em \texttt{p[0]}.
+
+\vspace{1em}
+
+Fazemos algo muito semelhante para a função \texttt{p\_bloco\_final}, que implementa a produção referente ao bloco principal do código Pascal, \texttt{BEGIN comandos END PONTO}.
+
+Aqui, os parâmetros \texttt{p[1]}, \texttt{p[2]}, \texttt{p[3]} e \texttt{p[4]} correspondem, respetivamente, aos tokens e produções: \texttt{BEGIN}, \texttt{comandos}, \texttt{END} e \texttt{PONTO}. 
+
+Assim, essa função constrói um nó na AST, sendo esse nó representado pela tupla \texttt{(‘bloco\_principal’, comandos)}, armazenando-o em \texttt{p[0]}.
+
+\vspace{14em}
+
+De seguida, vamos para as declarações das funções que serão responsáveis pela parte das declarações iniciais das variáveis que vão ser usadas pelo código Pascal. Essas correspondem às que falamos inicialmente, desde a \texttt{declaracoes} até a \texttt{intervalo}. 
+
+\vspace{1em}
+
+As duas primeiras funções vão corresponder às produções definidas inicialmente em  \texttt{declaracoes}. 
+
+Ora, nós sabemos que, como tínhamos explicado antes, podemos ter ou não declaração de variáveis. 
+
+\vspace{1em}
+Caso não tenhamos, dizemos que \texttt{declaracoes} deriva em vazio, que é definido na função \texttt{p\_declaracoes\_vazio}, em que dizemos que o nó da AST, em \texttt{p[0]} fica igual à lista vazia. 
+
+\vspace{1em}
+Caso tenhamos declarações, usados a primeira função, \texttt{p\_declaracoes\_var}. Nesta, nós sabemos que \texttt{p[1]} corresponde à palavra reservada \texttt{VAR} e \texttt{p[2]} correspode à lista de declarações feitas. Por isso, dizemos que em \texttt{p[0]} vamos guardar essa \texttt{lista\_declaracoes}. 
+
+
+\vspace{2em}
+-- 
+
+De seguida, vamos para a definição da produção \texttt{lista\_declaracoes}. Como tinhamos explicado antes, esta ou deriva em uma única \texttt{declaracao}, ou temos mais do que uma, derivando em \texttt{lista\_declaracoes declaracao}. É exatamente isso que implementamos.
+
+\vspace{1em}
+Na função \texttt{p\_lista_declaracoes\_single} dizemos que temos apenas uma declaração, dizendo que \texttt{p[0]} vai guardar essa  \texttt{declaracao}, representada por \texttt{p[1]}. 
+
+\vspace{1em}
+Na função \texttt{p\_lista_declaracoes\_multi} dizemos que temos mais do que uma declaração, dizendo que \texttt{p[0]} vai guardar a lista composta por essas  \texttt{lista\_declaracoes}, representada por \texttt{p[1]}, mais a lista feita pela única \texttt{declaracao} feita, representada por \texttt{p[2]}. 
+
+
+\vspace{4em}
+-- 
+
+Por fim, vamos definir o que é a produção de uma \texttt{declaracao}, representado pela função  \texttt{p\_declaracao}. 
+
+Começamos por dizer, tal como tínhamos explicado antes, que esta possui então uma  \texttt{lista\_ids}, com os identificadores das variáveis que são definidas,  \texttt{DOISPONTOS},  \texttt{tipo}, que é o tipo dessas variáveis e, por fim,  \texttt{PONTOEVIRG}. 
+
+Assim, em  \texttt{p[0]} guardamos um tuplo composto por \texttt{‘decl’}, ela \texttt{lista\_ids}, representada por  \texttt{p[1]}, e por  \texttt{tipo}, representado por  \texttt{p[3]}. 
+
+
+\vspace{2em}
+-- 
+
+Esses \texttt{lista\_ids}, como tinhamos dito antes, podem ser só uma declaração de variável, representada pela função \texttt{p\_lista\_ids\_single}, ou então ser a declaração de várias variáveis, representada pela função \texttt{p\_lista\_ids\_multi}. 
+
+\vspace{1em}
+Caso seja só uma declaração, guardamos em \texttt{p[0]} apenas o \texttt{ID} dessa declaração, sendo esse representado por \texttt{p[1]}. 
+
+\vspace{1em}
+Caso seja mais do que uma, vamos guardar em \texttt{p[0]} a lista dos ids já definidos, \texttt{lista\_ids}, que é a variável \texttt{p[1]}, e o \texttt{ID} agora definido, representado por \texttt{p[3]}.
+
+
+\vspace{2em}
+-- 
+
+Por fim, vamos tratar o \texttt{tipo}destas variáveis. 
+
+\vspace{1em}
+
+Sabemos que estes podem ser \texttt{INTEGER}, \texttt{REAL}, \texttt{BOOLEAN} ou então \texttt{STRING\_TYPE}. 
+
+Por isso, na função \texttt{p\_tipo\_base}, atribuimos a \texttt{p[0]} o tipo correspondente, guardado em \texttt{p[1]}.
+
+\vspace{1em}
+
+Já a função \texttt{p\_tipo\_array} é responsável por tratar dos tipos, quando estes são arrays. 
+
+Assim, quando o tipo de uma variável é da forma \texttt{ARRAY [ intervalo ] OF tipo}, guardamos em \texttt{p[0]} um tuplo composto por \texttt{‘array’}, o \texttt{intervalo} em que esse array está definido (variável \texttt{p[3]}), e o \texttt{tipo} dos elementos desse array (variável \texttt{p[6]}). 
+
+\vspace{1em}
+Para terminar, o \texttt{intervalo} é tratado pela função \texttt{p\_intervalo}. Dado um \texttt{NUM .. NUM}, ela atribui a \texttt{p[0]} um tuplo contendo o primeiro \texttt{NUM}, guardado em \texttt{p[1]}, e o segundo \texttt{NUM}, guardado em \texttt{p[3]}.
+
+
+\vspace{3em}
+
+O próximo ponto então da construção da gramática é definir os comandos que são utilizados dentro do bloco principal. Estes são então definidos nas seguintes funções.
+
+
+Sabemos que \texttt{comandos} pode ser dividido em dois casos: ou temos um único \texttt{comando}, ou então temos uma lista de comandos, \texttt{comandos comando}.
+
+\vspace{1em}
+
+Na função \texttt{p\_comandos\_single} começamos por tratar o caso de só termos um comandos. Assim, em \texttt{p[0]} vamos guardar esse único \texttt{comando}, representado pela lista de por \texttt{p[1]}. 
+
+\vspace{2em}
+
+Ao olhar ainda para exemplos de códigos Pascal, verificamos que era comum permitir um \texttt{;} final, antes do operador \texttt{END}. Por isso, vamos dividir a verificação de termos uma lista de comandos em duas funções. 
+
+\vspace{1em}
+
+Na função \texttt{p\_comandos\_multi} tratamos do caso de termos mais do que um comando, em que estes aparecem na forma \texttt{comandos ; comando}. Aqui, atribuímos a \texttt{p[0]} a lista dos \texttt{comandos}, representada por \texttt{p[1]}, junto da lista do \texttt{comando}, representada por \texttt{p[3]}. 
+
+\vspace{1em}
+
+Na função \texttt{p\_comandos\_trailing_semicolon} trata quase o mesmo tipo de caso, mas apenas temos a lista dos \texttt{comandos} com um \texttt{;} final, sem \texttt{comando} a seguir. Assim, atribuímos a \texttt{p[0]} a lista dos \texttt{comandos}, representada por \texttt{p[1]}. 
+
+\vspace{1em}
+
+Por fim, na função \texttt{p\_comando} definimos os tipos de comandos que podemos ter, como tínhamos dito antes. 
+
+Sabemos que estes podem ser: uma atribuição, uma atribuição de um array, um if, um ciclo while ou for, um writeln ou um readln, ou então um novo bloco. 
+
+Assim, nessa função atribuímos a \texttt{p[0]} o comando que foi usado, que está em \texttt{p[1]}.
+
+
+\vspace{2em}
+--
+
+Agora vamos nos focar na definição específica de cada um desses tipos de comandos apresentados
+
+--
+
+\vspace{1em}
+
+Como tínhamos explicado inicialmente, podemos ter mais blocos do tipo \texttt{BEGIN comandos END} dentro do bloco principal. É exatamente isso que é definido aqui. 
+
+Caso o parser encontre algo desse género, em \texttt{p[0]} vai guardar um tuplo composto por \texttt{‘bloco’} e os \texttt{comandos} que são definidos dentro dele, representado por \texttt{p[2]}
+
+
+\vspace{2em}
+--
+
+
+\vspace{1em}
+
+
+Quanto às atribuições, estas podem ser feitas normalmente a \texttt{ID}, ou então a \texttt{ARRAY}.
+
+\vspace{1em}
+
+Quanto aos normais, esses casos são tratados pela função \texttt{p\_atribuicao} que, dado um \texttt{ID ::= expr}, guarda em \texttt{p[0]} um tuplo composto por \texttt{‘atribuicao’}, o \texttt{ID} ao qual fazemos a atribuição, representado por \texttt{p[1]}, e a \texttt{expr} da atribuição, guardada em \texttt{p[3]}. 
+
+No caso dos arrays, estes são tratador pela função \texttt{p\_atribuicao\_array} que, dado um \texttt{ID [expr] ::= expr}, atribui a um elemento do array uma expressão. Ora, guardamos então em \texttt{p[0]} um tuplo composto \texttt{‘atribuicao\_array’}, o \texttt{ID} ao qual estamos a atribuir, \texttt{p[1]}, a \texttt{expr} referente ao elemento do array, \texttt{p[3]}, e a \texttt{expr} que vamos atribuir a esse elemento, \texttt{p[6]}. 
+
+\vspace{2em}
+--
+
+\vspace{1em}
+
+Quanto aos ifs, vamos ter dois casos: o \texttt{if} não têm um \texttt{else} associado, ou tem um \texttt{else} associado. 
+
+\vspace{1em}
+
+Para o primeiro caso, usamos a função \texttt{p\_comando\_if} que dado \texttt{IF expr THEN comando}, guarda em \texttt{p[0]} um tuplo com o \texttt{‘if’}, a \texttt{expr} a ser verificada, \texttt{p[2]}, e o \texttt{comando} a ser executado caso essa expressão seja verdadeira, \texttt{p[4]}. 
+
+No segundo caso, usamos a função \texttt{p\_comando\_if\_else} que dado \texttt{IF expr THEN comando ELSE comando}, guarda em \texttt{p[0]} um tuplo com o \texttt{‘ifelse’}, a \texttt{expr} a ser verificada, \texttt{p[2]}, o \texttt{comando} a ser executado caso essa expressão seja verdadeira, \texttt{p[4]}, e o \texttt{comando} a ser executado caso essa expressão seja false, \texttt{p[6]}. 
+
+
+\vspace{2em}
+--
+
+\vspace{1em}
+
+Quanto ao comando \texttt{while}, este é tratado com a função \texttt{p\_comando\_while} que, para quando recebe algo do tipo \texttt{WHILE expr DO comando}, guarda em \texttt{p[0]} o tuplo composto por  \texttt{‘while’}, pela \texttt{expr} que comanda o ciclo, \texttt{p[2]}, e pelo \texttt{comando} que é executado enquanto essa expressão é válida, \texttt{p[4]}.
+
+\vspace{2em}
+--
+
+\vspace{1em}
+
+Quando ao tratamento do \texttt{for}, vamos dividi-lo em dois casos.
+
+\vspace{1em}
+
+No caso de este estar relacionado com a expressão \texttt{TO}, ie, ser do género \texttt{FOR id ::= expr TO expr DO comando}, vamos tratar com a função \texttt{p\_comando\_for\_to}. Esta guarda em \texttt{p[0]} um tuplo composto por \texttt{‘for\_to’}, pelo \texttt{ID} que aparece na condição, \texttt{p[2]} e a expressão que lhe atribuímos, \texttt{p[4]}, a expressão que aparece depois do \texttt{TO}, \texttt{p[6]}, e, por fim, o \texttt{comando}  a ser executado enquanto essa expressão é válida, \texttt{p[8]}.
+
+
+No caso de este estar relacionado com a expressão \texttt{DOWNTO}, ie, ser do género \texttt{FOR id ::= expr DOWNTO expr DO comando}, vamos tratar com a função \texttt{p\_comando\_} \texttt{for\_downto}. Esta guarda em \texttt{p[0]} um tuplo composto por \texttt{‘for\_down’}, pelo \texttt{ID} que aparece na condição, \texttt{p[2]} e a expressão que lhe atribuímos, \texttt{p[4]}, a expressão que aparece depois do \texttt{DOWNTO}, \texttt{p[6]}, e, por fim, o \texttt{comando}  a ser executado enquanto essa expressão é válida, \texttt{p[8]}.
+
+
+\vspace{2em}
+--
+
+\vspace{1em}
+
+Quando temos o comando a ser um \texttt{writeln}, vamos o tratar com a função \texttt{p\_comando\_writeln}. Esta função, quando lê um \texttt{WRITELN \(lista\_expr\)}, guarda em \texttt{p[0]} um tuplo contendo o \texttt{‘writeln’} e a \texttt{lista\_expr} que passamos a esse comando, que é representada por \texttt{p[3]}. 
+
+\vspace{1em}
+
+Essa  \texttt{lista_expr} pode ser apenas uma expressão ou várias. 
+
+\vspace{1em}
+
+Caso seja só uma, é tratada na função  \texttt{p\_lista\_expr\_single} que, dada uma  \texttt{expr}, guarda em \texttt{p[0]} a lista composta por ela, que está representada em \texttt{p[1]}. 
+
+Caso seja mais do que uma expressão, são tratadas na função  \texttt{p\_lista\_expr\_multi} que, dada uma \texttt{lista\_expr , expr}, guarda em \texttt{p[0]} a lista composta pelas várias expressões, \texttt{p[1]}, junto da lista formada pela única, \texttt{p[3]}.
+
+
+\vspace{2em}
+--
+
+\vspace{1em}
+
+
+Quando temos o comando a ser um \texttt{readln}, vamos o tratar com a função \texttt{p\_comando\_readln}. Esta função, quando lê um \texttt{READLN \(lista\_expr\)}, guarda em \texttt{p[0]} um tuplo contendo o \texttt{‘readln’} e a \texttt{lista\_expr} que passamos a esse comando, que é representada por \texttt{p[3]}. 
+
+Para a \texttt{lista\_expr}, vão ser usadas, novamente, as mesmas funções que foram explicadas agora, \texttt{p\_lista\_expr\_single} e \texttt{p\_lista\_expr\_multi}.
+
+
+\vspace{2em}
+------
+
+Agora vamos tratar das expressões que podem ser atribuídas. 
+
+\vspace{1em}
+
+
+A função \texttt{p\_expr\_binop} trata todas as operações binárias, que é o caso das operações de \texttt{SOMA}, \texttt{SUBTR}, \texttt{MULT}, \texttt{DIVIDE}, \texttt{DIV}, \texttt{MOD}, das operações relacionais, como \texttt{IGUAL, DIFF, MAIOR, MENOR, MAIORIGUAL, MENORIGUAL}, e das lógicas, \texttt{AND, OR}. Quando ele encontra algo do género \texttt{expr operador expr} guarda em \texttt{p[0]} um tuplo composto por \texttt{‘op’}, o operador utilizado, \texttt{p[2]}, a expressão à esquerda, \texttt{p[1]}, e a da direita, \texttt{p[3]}. 
+
+\vspace{1em}
+
+A função \texttt{p\_expr\_not} trata da negação lógica. Quando recebe um \texttt{NOT expr}, guarda em \texttt{p[0]} um tuplo contendo o  \texttt{‘not’} e a \texttt{expr} a ser negada, \texttt{p[2]}.
+
+\vspace{1em}
+
+A função \texttt{p\_expr\_neg} trata da negação unária. Quando recebe uma expressão precida por  \texttt{-}, guarda em \texttt{p[0]} um tuplo contendo o  \texttt{‘neg’} e a \texttt{expr} a ser negada, \texttt{p[2]}.
+
+\vspace{1em}
+
+A função \texttt{p\_expr\_paren} trata de expressões entre parênteses. Quando recebe um \texttt{\(expr\)}, guarda em \texttt{p[0]} a \texttt{expr}, \texttt{p[2]}.
+
+\vspace{1em}
+
+A função \texttt{p\_expr\_num} trata constantes numéricas. Quando recebe um \texttt{NUM}, guarda em \texttt{p[0]} um tuplo contendo o  \texttt{‘num’} e o valor numério, \texttt{p[1]}.
+
+\vspace{1em}
+
+A função \texttt{p\_expr\_id} trata identificadores (nomes de variáveis). Quando recebe um \texttt{ID}, guarda em \texttt{p[0]} um tuplo contendo o  \texttt{‘id’} e o identificador, \texttt{p[1]}.
+
+\vspace{1em}
+
+A função \texttt{p\_expr\_array\_acess} trata acessos a elementos de um array. Quando recebe um \texttt{ID [expr]}, guarda em \texttt{p[0]} um tuplo contendo o  \texttt{‘array\_acess’}, o identificador do array, \texttt{p[1]}, e o elemento a que estamos a aceder, \texttt{p[3]}.
+
+\vspace{1em}
+
+A função \texttt{p\_expr\_string} trata strings. Quando recebe um \texttt{STRING}, guarda em \texttt{p[0]} um tuplo contendo a  \texttt{‘string’} e o valor desta, \texttt{p[1]}.
+
+\vspace{1em}
+
+As funções \texttt{p\_expr\_true} e \texttt{p\_expr\_true} tratam dos valores booleanos. Quando recebe um \texttt{TRUE} ou um \texttt{FALSE}, guarda em \texttt{p[0]} um tuplo contendo apenas o  \texttt{‘true’} ou o \texttt{‘false}, respetivamente. 
+
+
+\vspace{2em}
+------
+
+Por fim, vamos tratar dos erros sintáticos.
+
+\vspace{1em}
+
+
+A função \texttt{p\_error} é invocada pelo parser sempre que este encontra um erro de sintático, ie, quando recebe um token que não consegue processar de acordo com a gramática definida. Assim, ela primeiro verifica se existe um token problemático, que é representado por \texttt{p}. 
+
+
+Caso exista, extrai o número da linha onde esse erro ocorreu, e imprime uma mensagem de erro descritiva, indicando a linha do erro, o token que o gerou e o valor que tinha sido atribuído a este. 
+
+Caso este seja \texttt{None}, significa que o parser chegou ao fim do ficheiro de código Pascal de forma inesperada, ie, sem conseguir completar uma derivação válida, pelo que imprime uma mensagem de erro contendo essa informação.
+
+Finalmente, define o \texttt{succes} do parser como sendo \texttt{False}, o que indica que a análise sintática falhou. 
+
+
+\vspace{2em}
+------
+
+Por fim, criamos uma instância do parser, que irá processar todas as produções definidas e gerar uma AST. A variável \texttt{parser.succes} é inicializada a \texttt{True}, indicando que, por defeito, nenhum erro foi detetado até ao momento.
+
+
+
+% ------------------------------------------------------------
+\section{Análise semântica}
+% ------------------------------------------------------------
+
+A análise semântica é responsável por verificar se o programa é \textbf{correto do ponto de vista do significado} das instruções, garantindo que não existem incoerências que poderiam causar erros durante a execução. Esta fase utiliza a Árvore Sintática Abstrata (AST) gerada pelo parser e aplica regras relativas a tipos, declarações e utilização de variáveis.
+
+Uma das principais estruturas utilizadas nesta fase é a \textbf{tabela de símbolos}, onde são registadas informações sobre variáveis, constantes, tipos e funções/procedimentos declarados no programa. Para cada elemento, a tabela armazena o nome, o tipo, o escopo e outras propriedades relevantes.
+
+A análise semântica realiza as seguintes verificações:
+
+\begin{itemize}
+    \item \textbf{Declaração prévia}: todas as variáveis e funções/procedimentos devem ser declarados antes de serem utilizados.
+    \item \textbf{Compatibilidade de tipos}: operações aritméticas e lógicas são verificadas para garantir que os operandos têm tipos compatíveis.
+    \item \textbf{Atribuições}: o valor atribuído a uma variável deve ser compatível com o seu tipo.
+\end{itemize}
+
+Sempre que um erro semântico é detetado, o compilador regista a informação relevante (tipo de erro, linha e contexto) de forma a que o programador possa corrigi-lo. A fase de análise semântica garante que apenas programas válidos prosseguem para a geração de código.
+
+A implementação da análise semântica foi realizada de forma \textbf{modular}, permitindo adicionar ou modificar regras facilmente, e integrando-se diretamente com a AST produzida pelo parser.
+
+
+% ------------------------------------------------------------
+\subsection{Implementação}
+% ------------------------------------------------------------
+
+\vspace{1em}
+
+Inicialmente, criamos a classe \texttt{SemanticError} que é uma exceção personalizada, utilizada para sinalizar \textbf{erros semânticos} relacionados com declarações, como por exemplo declarações duplicadas ou a utilização de um id não identificado. Isto permite que haja um tratamento diferente consoante o tipo de erro, ao longo da análise semântica.
+
+
+\vspace{1em}
+
+A classe \texttt{Symbol} serve para representar um símbolo na tabela de símbolos, podendo ser uma variável normal ou um array. Quando se cria uma instância desta classe, armazena-se informações referentes ao identificador:
+
+\begin{itemize}
+  \item \texttt{name}: nome do identificador, como por exemplo, x;
+  \item \texttt{kind}: o tipo do símbolo, que pode ser \texttt{var} no caso de uma variável normal ou \texttt{array} no caso de um array;
+  \item \texttt{type\_name}: o tipo do símbolo, como \texttt{integer}, \texttt{real}, \texttt{string}, ou \texttt{array} no caso de ser um array;
+  \item \texttt{offset}: a posição na memória reservada para o símbolo, que vai ser usada na parte da geração de código para a VM;
+  \item Reservamos ainda campos específicos para arrays:
+    \begin{itemize}
+      \item \texttt{lower}: limite inferior do intervalo do array;
+      \item \texttt{upper}: limite superior do intervalo do array;
+      \item \texttt{elem_type}: tipo dos elementos do array, como  \texttt{integer}, \texttt{real}, \texttt{string};
+    \end{itemize}
+\end{itemize}
+
+
+\vspace{1em}
+
+A classe \texttt{SymbolTable} vai gerenciar a tabela de símbolos de um dado programa, armazenando informações sobre todas as variáveis e arrays que foram declarados. 
+
+Esta é inicializada como um dicionário vazio, em \texttt{\_symbols} (mapeia nomes de ids para os respectivos objetos \texttt{Symbols}), e com \texttt{\_next\_offset} a 0 (rastreia a próxima posição de memória disponível). 
+
+\vspace{1em}
+
+A função \texttt{define\_var} é responsável por registrar uma variável simples na tal tabela de símbolos. 
+
+Começa por verificar se já foi declarada uma variável com esse \texttt{name} na tabela de símbolos e, caso exista, lança uma exceção, dizendo que houve um erro semântico derivado do facto de se ter uma declaração duplicada. 
+
+Caso contrário, cria um novo símbolo do tipo \texttt{‘var’} com o offset atual, adicionando-o ao dicionário, incrementando o offset, e retornando o símbolo criado. 
+
+\vspace{1em}
+
+A função \texttt{define\_array} é responsável por registrar um array na tabela de símbolos. 
+
+Começa por verificar se já foi declarado algo com esse \texttt{name} na tabela de símbolos e, caso exista, lança uma exceção, dizendo que houve um erro semântico derivado ao facto  de se ter uma declaração duplicada. 
+
+Caso contrário, cria um novo símbolo do tipo \texttt{‘array’}, associando-lhe os limites superiores e inferiores e o tipo dos elementos fornecidos. Esta ainda reserva múltiplas posições de memória consecutivas, calculando o número de elementos do array, e reservando esse número, e, no fim, incrementando o \texttt{\_next\_offset} com base nesse valor.
+
+\vspace{1em}
+A função \texttt{lookup} procura um símbolo pelo seu nome no dicionário de símbolos. Caso esse exista, retorna o objeto \texttt{Symbolo} correspondente e, caso não exista, retorna \texttt{None}. Vai ser usada para verificar se um id já foi previamente declarado. 
+
+
+\vspace{1em}
+A função \texttt{items} serve para retornar a lista de todos os símbolos, ie, pares \texttt{(nome, simbolo)} armazenados da tabela de símbolos. 
+
+\vspace{1em}
+-----------------------
+
+
+\vspace{1em}
+
+Assim, definimos a classe principal, \textbf{\texttt{SemanticAnalyser}}, que é a componente central desta análise semântica, sendo responśavel por validar a semântica de um dado código em Pascal Standard. 
+
+Começamos por, em \texttt{\_\_init\_\_} dizer que, quando se cria uma instância desta classe, incializamos a tabela de símbolos, \texttt{.symtab}, como sendo uma instância da classe \texttt{SymbolTable}, e inicializamos ainda a lista \texttt{errors} como vazia, uma vez que, inicialmente, ainda não foram encontrados nenhuns erros semânticos. 
+
+
+\vspace{1em}
+
+De seguida, criamos uma função \texttt{\_norm\_type\_token} responsável por converter os tipos vindos de uma AST do parser para uma forma uniforme, sendo essencial para garantir que a comparação de tipos seja feita de forma justa. 
+
+Assim, quando recebe um tipo \texttt{t} ela vai verificar:
+
+\begin{itemize}
+  \item Se \texttt{t} é do tipo \texttt{None}, então apenas retorna esse tipo;
+
+  \item Se \texttt{t} é um tuplo, pode representar um array. 
+    \begin{itemize}
+      \item Se for uma tupla que contém 3 elementos, e o primeiro é \texttt{‘array’}, então estamos de facto perante um array, pelo que obtemos o intervalo deste, guardado na primeira componente, e os elementos, guardados na segunda componente. De seguida, os tipos dos elementos são normalizados, retornando no final o mesmo tipo de tupla, só que normalizada.
+      \item Caso não seja esse tipo de tupla, apenas retorna o \texttt{t}.
+    \end{itemize}
+
+  \item Se \texttt{t} é uma string, então apenas o normalizamos, convertendo-o para minúsculas. Por exemplo, se for \texttt{INTEGER} fica \texttt{integer}, \texttt{REAL} -> \texttt{real}, etc. 
+\end{itemize}
+
+\vspace{1em}
+
+Definimos a função \texttt{error} que quando se obtém um erro semântico ao longo da análise, os métodos podem invocar esta função, sendo que ela adiciona a mensagem de erro à lista \texttt{errors} do analisador semântico.
+
+\vspace{1em}
+------------
+
+\vspace{1em}
+
+A função \texttt{analyze} é a função principal da análise semântica. Esta vai receber a AST produzida pelo parser e verificar a semântica completa. 
+
+Inicialmente, ela limpa a lista de erros anterior, garantindo que começa a fazer uma nova análise.
+
+\vspace{1em}
+
+De seguida, vai verificar se o nó raiz é uma tupla que comece com \texttt{‘programa’} e que contém pelo menos um elemento, uma vez que sabemos que um programa em Pascal começa sempre com uma linha \texttt{program …}. 
+
+Se a AST não cumprir esse requisito, vai se registrar um erro informando isso, e retorna-se \texttt{False}. 
+
+Caso contrário, vai se tentar extrair as três componentes desse tuplo, o nome do progama, \texttt{prog\_name}, a lista de declarações feitas, \texttt{declarations}, e o bloco principal, \texttt{block\_node}. 
+
+Caso a AST tenha uma estrutura que não essa, adicionamos à lista \texttt{error} esse erro, e retorna-se \texttt{False}. 
+
+\vspace{1em}
+
+Asim, com recurso à função \texttt{\_.process\_declarations} vai se processar todas as declarações feitas. 
+
+\vspace{1em}
+
+De seguida, extrai-se os comandos feitos no bloco principal, criando uma lista \texttt{commands} para os armazenar. O bloco pode estar representado de duas formas:
+
+\begin{itemize}
+  \item Com uma tupla com rótulo \texttt{‘bloco_principal} ou \texttt{‘bloco’}, cujo segundo elemento da tupla é uma lista de comandos;
+  \item Ou diretamente como uma lista de comandos.
+\end{itemize}
+
+Se o bloco não corresponder a nenhum destes casos, retorna-se \texttt{False} e guarda-se o erro correspondente. 
+
+\vspace{1em}
+
+Depois de os extrair, vamos chamar a função \texttt{\_process\_command} para cada um dos comandos, responsável por os processar.
+
+
+\vspace{1em}
+
+No fim, caso não tenha havido erros, devolve \texttt{True}.
+
+
+\vspace{1em}
+------------
+
+\vspace{1em}
+
+
+Esta função \texttt{\_process\_declarations} é responsável então por processar todas as declarações das variáveis e array acima referidos, sendo que recebe então a lista dessas declarações vindas do parser, sendo que cada elemento tem o formato \texttt{(‘decl’, lista\_ids, tipo)}. 
+
+\vspace{1em}
+
+Ela começa por verificar se não existe nenhuma declaração e, nesse caso, diz que as declarações são válidas (já que no código Pascal não se faz nenhuma). 
+
+Caso existam declarações, vai iterar por cada uma delas naquela lista.
+
+Para cada uma, começa por verificar o seu formato: tem de ser um tuplo, com pelo menos 3 elementos, e o primeiro tem de ser \texttt{‘decl’}. Se isso não for verificado, regista um erro semântico, e verifica as restantes declarações. 
+
+Se a declaração é válida, vai extrair os seus elementos:
+
+\begin{itemize}
+  \item \texttt{ids}, que correspondem à lista de identificadores declarados (por exemplo, \texttt{x, y, z});
+  \item \texttt{vtype}, que correspondem ao tipo, tal como vêm do parser;
+  \item \texttt{vtype\_norm}, que corresponde ao tipo normalizado, através da função \texttt{\_norm\_type\_token}.
+\end{itemize}
+
+
+
+A função então agora apresenta dois casos. 
+
+\vspace{1em}
+
+Se o tipo normalizado é uma tupla, com o rótulo \texttt{‘array’}, vamos processar uma \textbf{declaração de array}, extraindo-se o intervalo, e o tipo dos elementos desse array. 
+
+Primeiro, vamos verificar se o intervalo é uma tupla com exatamente dois elementos e, caso não seja, regista-se um erro, passando à próxima declaração. 
+
+Depois, vamos extrair os limites inferior e superior desse intervalo, e verificar se ambos são inteiros e, caso algum não o seja, regista-se outro tipo de erro, passando novamente à próxima declaração.
+
+De seguida, vamos validar a lógica do intervalo, ie, verificar se o extremo inferior não é maior que o extremo superior. Caso seja, regista-se outro tipo de erro, e passa-se à próxima declaração. 
+
+Por fim, se todas as validações passarem, para cada id na lista \texttt{ids}, invoca-se a função que \texttt{define\_array}, registrando o array na tabela de símbolos. Caso essa chamada lance uma exceção (por exemplo, id já declarado), captura-se a tal exceção e regista-se a mensagem de erro. 
+
+
+\vspace{1em}
+
+Se o tipo normalizado não é um \texttt{‘array’}, vamos processar uma \textbf{declaração de tipos simples}. 
+
+Verifica-se primeiro se é uma string, que indica um tipo primitivo (como \texttt{integer, real, boolean, string}). 
+
+Se for, invoca-se a função que \texttt{define\_var}, registrando a variável na tabela de símbolos. Caso essa chamada lance uma exceção, captura-se essa exceção e regista-se a mensagem de erro. 
+
+\vspace{1em}
+
+Se não for uma string e nem um array, significa que é um tipo desconhecido, não registado pelo analisador e, nesse caso, regista-se um erro indicando que o tipo da declaração é inválido. 
+
+
+\vspace{1em}
+------------
+
+\vspace{1em}
+
+A função \texttt{\_process_command} é responsável por processar os comandos que se encontram dentro daquele bloco principal ou, futuramente, em outros blocos declarados dentro desse. Assim, vai receber um comando, \texttt{cmd}, e analisá-lo semanticamente. 
+
+\vspace{1em}
+
+Começa então por verificar se esse comando é \texttt{None}. Nesse caso, ele é válido, já que não há nada a processar, pelo que retorna logo. 
+
+\vspace{1em}
+
+De seguida, verifica se é uma lista, pelo que se sabe então que temos uma lista de comandos. Para isso, itera sobre cada comando e, para cada um deles, chama a função \texttt{\_process_command} novamente. 
+
+\vspace{1em}
+
+Se não é \texttt{None} e nem uma lista, vai validar o formato esperado: tupla não vazia. Caso isso não seja cumprido, regista um novo erro, retornando logo. 
+
+\vspace{1em}
+
+Por fim, a função extrai o \texttt{kind}, que é o primeiro elemento da tupla e que representa o tipo do comando que estamos a processar (por exemplo, atribuição, writeln, if, etc). 
+
+Dependendo do tipo, vamos fazer coisas diferentes. 
+
+
+\vspace{1em}
+------
+
+{\normalsize \textbf{Atribuição Simples}}
+
+\vspace{1em}
+
+Quando o comando é uma atribuição simples, vindo do parser como \texttt{(‘atribuicao’, var, expr)}, começamos por extrair o identificador da variável, \texttt{var\_name}, e a expressão que lhe está a ser atribuída, \texttt{expr}. 
+
+De seguida, vai procurar na tabela de símbolos o símbolo correspondente a \texttt{var\_name}. Se esse símbolo for \texttt{None}, significa que foi utilizada uma variável não declarada, pelo que regista um erro semântico, mas, mesmo assim, avalia o tipo da expressão, com \texttt{\_eval\_expr\_type}, para tentar capturar mais erros.
+
+Se a variável foi declarada, vai avaliar o tipo da expressão, com \texttt{\_eval\_expr\_type}. 
+
+Invoca ainda \texttt{\_check\_assignment\_types}, que verifica se o tipo da expressão é compatível com o tipo da variável, aplicando as regras de compatibilidade de tipos do Pascal. 
+
+
+\vspace{1em}
+------
+
+{\normalsize \textbf{Atribuição a arrays}}
+
+\vspace{1em}
+
+
+Quando o comando é uma atribuição a um elemento de um array, recebido pelo parser no formato \texttt{(‘atribuicao\_array’, nome\_array, expr\_indice, expr)}, começa-se por extrair o identificador do array, \texttt{name}, a expresão que representa o seu índice, \texttt{index\_expr} e  a \texttt{expr}. 
+
+Começa-se então por procurar o símbolo correspondente a \texttt{name} na tabela de símbolos.
+
+Se não existir, regista-se um erro indicando que está a tentar se o usar um array que não foi declarado. Avalia-se ainda o tipo de expressões usadas no índice do array e o tipo de expressões de \texttt{expr}.
+
+De seguida, verifica-se se o símbolo encontrado é efetivamente um array. Se não for, regista-se essa informação num erro. 
+
+Depois, avalia-se o tipo de expressão de índice, que deve obrigatoriamente ser um \texttt{integer}. Se for de outro tipo, regista-se um erro semântico.
+
+Além disso, vai se verificar os limites do intervalo, caso este seja um literal. Para isso, verifica-se se a expressão de índice, \texttt{index\_expr} é uma tupla com rótulo sendo \texttt{‘num’}, contendo um inteiro.
+
+Se for, extraímos o valor literal do índice e comparamos com os limites superior e inferior do intervalo. Se o índice a que estamos a tentar aceder do array não estiver dentro desses limites, registramos um erro semântico. 
+
+Posteriormente, avalia-se o tipo da expressão a ser atribuída, \texttt{expr}. Se o tipo não é \texttt{None}, vai se verificar a compatibilidade com o tipo dos elementos do array:
+
+\begin{itemize}
+  \item Se o tipo da expressão coincide exatamente com o tipo dos elementos, a atribuição é válida;
+  \item Se o tipo dos elementos é \texttt{real} e o tipo da expressão é \texttt{integer}, também se permite a atribuição;
+  \item Em qualquer outro caso, a atribuição não é válida, pelo que se regista um erro de incompatibilidade de tipos.
+\end{itemize}
+
+
+\vspace{1em}
+------
+
+{\normalsize \textbf{Writeln}}
+
+\vspace{1em}
+
+
+Quando o comando é um \texttt{writeln}, recebido pelo parser como \texttt{(‘writeln’, lista\_expr)}, o analisador semântico começa por obter a lista de expressões a serem impressas, \texttt{exprs}. 
+
+De seguida, vai verificar se isso é de facto uma lista e, se não for, guarda um erro, dizendo que o \texttt{writeln} recebeu argumentos inválidos.
+
+Assim, vai então iterar sobre cada expressão dessa lista e, para cada uma delas, vai avaliar o seu tipo através da função \texttt{\_eval\_expr\_type}.
+
+Caso isso retorne \texttt{None}, significa que o erro já houve um erro registado durante a avaliação da expressão, pelo que passa à próxima.
+
+Se foi possível determinar o tipo, vai verificar se é possível o imprimir. Uma vez que em Pascal só se pode usar essa função para \texttt{integer, real, boolean, string}, se a expressão não for de nenhum desses tipos, regista um erro semântico, dizendo que esse tipo não é imprimível. 
+
+
+\vspace{1em}
+------
+
+{\normalsize \textbf{Readln}}
+
+\vspace{1em}
+
+Quando o comando é um \texttt{readln}, recebido pelo parser como \texttt{(‘readln’, lista\_args)}, o analisador semântico começa por obter a lista de argumentos de destino.
+
+De seguida, vai verificar se isso é de facto uma lista e, se não for, guarda-se os \texttt{args} numa lista, permitindo que um único argumento seja processado como lista com um elemento.
+
+De seguida, vai se iterar sobre cada elemento dessa lista. 
+
+\vspace{1em}
+
+Se o argumento é um tuplo, com o rótulo \texttt{id}, então estamos perante uma \textbf{variável simples}, pelo que se extrai o seu nome, \texttt{vname}, e procura-se tal símbolo na tabela de símbolos. 
+
+Se o símbolo não existir, regista-se um erro dizendo que a variável não foi declarada.
+
+Se existir, vamos verificar primeiro se o símbolo é efetivamente uma variável, \texttt{var}, e não um array ou outro tipo. Se não for uma \texttt{var}, regista-se um erro dizendo isso. 
+
+Depois, vai se verificar se o tipo da variável é suportado para leitura, ie, se é um \texttt{integer, real, string} e, se não for, regista o devido erro semântico. 
+
+\vspace{1em}
+
+
+Se o argumento é um tuplo, com o rótulo \texttt{array\_acess}, então estamos perante um \textbf{acesso a array}, pelo que se extrai o seu nome, \texttt{arr\_name} e a expressão referente ao índice que estamos a aceder, \texttt{idx\_expr} , e procura-se tal símbolo na tabela de símbolos. 
+
+Se não existir na tabela, regista-se um erro dizendo isso. 
+
+Se existir, vai se verificar se é efetivamente um array e, caso não seja, regista-se outro tipo de erro semântico. 
+
+De seguida, vai-se avaliar se o tipo da expressão que se refere ao índice a ser acedido é de facto um \texttt{integer}. Se não for, regista-se outro erro. 
+
+Vai se verificar também se o índice que foi recebido se encontra dentro dos limites do array. Para isso, se a expressão do índice é um tuplo com rótulo \texttt{num}, extraímos o valor literal e vamos comparar os limites do array: caso o índice a ser acedido estiver fora desses limites, registramos um erro dizendo exatamente isso. 
+
+Por fim, verifica-se se o tipo de elementos do array é suportado para o \texttt{readln}, sendo que este apenas pode ler \texttt{integer, real, string}. Caso o tipo seja diferente, regista-se um erro semântico. 
+
+\vspace{1em}
+
+Para terminar esta função, caso o argumento não seja nem uma variável simples e nem um acesso a array, regista-se um erro dizendo que o destino é inválido. 
+
+
+\vspace{1em}
+------
+
+{\normalsize \textbf{If}}
+
+
+\vspace{1em}
+
+
+Quando o comando é um \texttt{if} simples (sem else), recebido pelo parser como \texttt{(‘if’, expr\_condicao, comando)}, o analisador semântico começa por extrair a expressão condicional, \texttt{cond} e o comando a executar se essa for verdadeira, \texttt{then\_cmd}. 
+
+De seguida, vai avaliar se o tipo da expressão, obtido com \texttt{\_eval\_expr\_type}, é um \texttt{boolean}. Se não for, regista-se um erro semântico informando que não o é.
+
+Se for, vai se processar o comando \texttt{then\_cmd} invocando recursivamente a função \texttt{\_process\_command}. 
+
+
+\vspace{1em}
+------
+
+{\normalsize \textbf{IfElse}}
+
+
+\vspace{1em}
+
+
+Quando o comando é um \texttt{if-else}, recebido pelo parser como \texttt{(‘ifelse’, expr\_condicao, comando\_then, comando\_else)}, o analisador semântico começa por extrair a expressão condicional, \texttt{cond}, o comando a executar se essa for verdadeira, \texttt{then\_cmd}, e o comando a executar se ela for falsa, \texttt{else\_cmd}.
+
+De seguida, vai avaliar se o tipo da expressão, obtido com \texttt{\_eval\_expr\_type}, é um \texttt{boolean}. Se não for, regista-se um erro semântico informando que não o é.
+
+Se for, vai se processar o comando \texttt{then\_cmd} e o comando \texttt{else\_cmd}, invocando recursivamente a função \texttt{\_process\_command}. 
+
+
+\vspace{1em}
+------
+
+{\normalsize \textbf{While}}
+
+\vspace{1em}
+
+
+Quando o comando é um \texttt{while}, recebido pelo parser como \texttt{(‘while’, expr\_condicao, comando\_corpo)}, o analisador semântico começa por extrair a expressão condicional, \texttt{cond} e o comando do corpo do ciclo, \texttt{body}.
+
+De seguida, vai avaliar se o tipo da expressão, obtido com \texttt{\_eval\_expr\_type}, é um \texttt{boolean}. Se não for, regista-se um erro semântico informando que não o é.
+
+Se for, vai se processar o comando \texttt{body}, invocando recursivamente a função \texttt{\_process\_command}. 
+
+
+\vspace{1em}
+------
+
+{\normalsize \textbf{For}}
+
+\vspace{1em}
+
+
+Quando o comando é um \texttt{for}, este pode ser de dois tipos
+
+\begin{itemize}
+  \item \texttt{for\_to}, vindo do parser como \texttt{(‘for\_to’, var, expr\_inicio, expr\_fim, comando\_corpo)};
+  \item \texttt{for\_down}, vindo do parser como \texttt{(‘for\_down’, var, expr\_inicio, expr\_fim, comando\_corpo)};
+\end{itemize}
+
+Assim, primeiro vai se extrair a variável de controlo, \texttt{var\_name}, as expressões de ínicio e fim de ciclo, \texttt{start\_expr, end\_expr}, e o comando do corpo do ciclo, \texttt{body}. 
+
+De seguida, vai-se primeiro procurar essa variável de controlo na tabela de símbolos e, caso essa não exista, regista-se um erro semântico, indicando que a variável não foi declarada. 
+
+
+Depois, se existir, vai se verificar se é uma \texttt{var} simples (não é array) e que o seu tipo é \texttt{integer}, uma vez que em Pascal a variável de controlo de um \texttt{for} deve ser um inteiro. Se não cumprir essas condições, regista-se um novo erro semântico. 
+
+Seguidamente, avaliamos o tipo das expressões de início e de fim de ciclo, através da função \texttt{\_eval\_expr\_type}, sendo que ambas deve ser do tipo \texttt{integer}. Caso alguma não seja, regista-se um erro semântico.
+
+Por fim, processa-se o corpo do ciclo, \texttt{body}.
+
+
+\vspace{1em}
+------
+
+{\normalsize \textbf{Bloco de comandos}}
+
+\vspace{1em}
+
+
+Quando o comando é um \texttt{bloco}, ou um \texttt{bloco\_principal}, começamos por extrair a lista de comandos contida nesse bloco, \texttt{cmds}.
+
+Se isso é de facto uma lista, itera-se sobre cada comando, processando-os recursivamente, com \texttt{\_process_command}. 
+
+Caso seja um único comando, vamos também o processar com \texttt{\_process_command}. 
+
+
+\vspace{1em}
+------
+
+{\normalsize \textbf{Comando desconhecido}}
+
+
+\vspace{1em}
+
+
+Se nenhum dos tipos de comandos acima referidos foi identificado, significa que estamos perante um comando desconhecido, pelo que o analisador semântico tem que fazer um tratamento de fallback. 
+
+Se esse comando é uma lista, vai iterar por cada comando da lista, chamando recursivamente a funçaĩ \texttt{\_process_comando}. 
+
+Se não for uma lista, vai registar um erro semântico, informando que não é conhecido esse comando.
+
+
+\vspace{1em}
+------------
+
+\vspace{1em}
+
+
+Esta função \texttt{\_eval\_expr\_type} é responsável então por inferir o tipo de uma expressão e retornar esse tipo. 
+
+Inicialmente, verifica-se se a \texttt{expr} é \texttt{None} e, caso seja, regista-se um erro semântico, retornando também \texttt{None},. 
+
+Caso a expressão não seja uma tupla (formato esperado para nó da AST), então regista-se um erro semântico com essa informação. 
+
+De seguida, vai se extrair \texttt{tag}, que corresponde ao primeiro elemento da tupla, correspondente ao tipo de nó da expressão. 
+
+
+\vspace{1em}
+------
+
+{\normalsize \textbf{Literais}}
+
+\vspace{1em}
+
+Para literais numéricos, representados no parser por \texttt{(‘num’, valor)}, começa-se por extrair o valor, \texttt{v}, e determina-se o seu tipo. 
+
+Se o valor é inteiro, então retorna-se \texttt{integer}. Caso contrário, assume-se que é um número \texttt{real}. 
+
+Caso seja uma \texttt{string}, retorna-se isso mesmo. 
+
+Caso a tag seja \texttt{true / false}, estamos perante um \texttt{boolean}. 
+
+
+\vspace{1em}
+------
+
+{\normalsize \textbf{Identificadores}}
+
+\vspace{1em}
+
+
+Para identificadores, representados por \texttt{(‘id’, nome)}, começa-se por extrair esse \texttt{name} e por procurar na tabela de símbolos o símbolo correspondente. 
+
+Caso esse não exista, regista-se um erro semântico dizendo que essa variável não foi declarada. 
+
+Se o símbolo existir, e for do tipo \texttt{var}, retorna-se o tipo declarado.  Se for um array, retorna-se \texttt{array}. Se for qualquer outro tipo desconhecido, regista-se um erro semântico informando isso. 
+
+
+\vspace{1em}
+------
+
+{\normalsize \textbf{Acesso a Arrays}}
+
+\vspace{1em}
+
+Para acesso a arrays, representados por \texttt{(‘array\_acess’, nome\_array, expr\_indice)}, começa-se por extrair o nome do array, \texttt{name}, e a expressão que representa o índice a que estamos a aceder, \texttt{idx}. 
+
+De seguida, procura-se na tabela de símbolos tal símbolo, pelo que, se ele não existir, regista-se um erro semântico de array não declarado. Vai  se ainda avaliar o índice, de modo a capturar mais erros. 
+
+Se ele existir na tabela, vamos verificar se é de facto um array e, caso nã seja, registramos um erro informando isso e, ainda, avaliamos novamente o índice. 
+
+Se não estiver em nenhum dos casos acima, avalia novamente o índice e se este não for um \texttt{integer}, vai registar um erro. 
+
+Além disso, vai verificar os limites: se o índice a que tenta aceder é um literal, e não está dentro dos limites do intervalo do array, regista um erro semântico. 
+
+Finalmente, retorna o tipo dos elementos do array. 
+
+
+\vspace{1em}
+------
+
+{\normalsize \textbf{Operadores binários}}
+
+\vspace{1em}
+
+
+Para cada operador binário, representado por \texttt{(‘op’, operador, expr\_esq, expr\_dir)}, extrai-se o operador, \texttt{op}, e as expressões relacionadas, \texttt{left} e \texttt{right}. 
+
+De seguida, avalia-se recursivamente o tipo de ambas as expressões, e se nenhuma conseguir ser avaliada, retorna-se \texttt{None}.
+
+Normalizamos ainda o operador para minúsculas, armazenando em \texttt{lop}.
+
+De seguida temos diferentes casos.
+
+
+\begin{itemize}
+  \item \textbf{Operadores aritméticos (+, -, *)}: estes operadores requerem operandos numéricos (inteiros ou reais). Se ambos são numéricos, o resultado é \texttt{real} se qualquer um deles for real e, caso contrário, é \texttt{integer}. Se algum deles não é numérico, regista-se um erro;
+  \item \textbf{Divisão real (/)}: esta retorna sempre um \texttt{real}, mesmo que ambos os operandos sejam inteiros;
+  \item \textbf{Div e Mod}: só funcionam com inteiros, retornando sempre um \texttt{integer}. Se algum deles não for inteiro, regista-se um erro;
+  \item \textbf{= e <>}: comparam dois valores e retornam \texttt{boolean}, sendo que só são permitidas comparações entre tipos iguais, ou entre inteiros e reais. Se os tipos são incompatíveis, regista-se um erro semântico;
+  \item \textbf{<, <=, >, >=}: comparam números (inteiros ou reais), ou strings, retornando sempre \texttt{boolean}. Podemos, em Pascal, comparar entre tipos mistos de números mas, se os tipos não forem compatíveis, regista um erro;
+  \item \textbf{and e or}: requerem que ambos os operandos sejam do tipo \texttt{boolean}, retornado isso também. Assim, se algum deles não o for, regista um erro;
+  \item \textbf{desconhecido}: se o operador não é conhecido, regista ym erro semântico. 
+\end{itemize}
+
+
+\vspace{1em}
+------
+
+{\normalsize \textbf{Operadores unários}}
+
+\vspace{1em}
+
+
+
+\begin{itemize}
+  \item \textbf{Negação (-)}: esta pode ser aplicada apenas a tipos numéricos, pelo que se verifica se a sub-expressão é \texttt{integer} ou \texttt{real}. Se não for, regista-se um erro;
+  \item \textbf{Not (not)}: esta pode ser aplicada apenas a \texttt{boolean}, pelo que se a sub-expressão não o for, regista um erro.
+\end{itemize}
+
+
+\vspace{1em}
+------
+
+{\normalsize \textbf{Fallback}}
+
+\vspace{1em}
+
+Se nenhum tipo acima foi identificado, estamos perante uma expressão cujo tipo é desconhecido, pelo que registramos um erro semântico informando isso.
+
+
+\vspace{1em}
+------------
+
+\vspace{1em}
+
+
+Esta função \texttt{\_check\_assignment\_types} é responsável por validar se o tipo de uma expressão é compatível com o tipo de uma variável na atribuição. 
+
+Inicialmente, ela verifica se o tipo da expressões é \texttt{None} e, caso seja, significa que já houve erros durante a avaliação da expressão, pelo que apenas retorna. 
+
+Se seguida, vai verificar se o símbolo é uma \texttt{var} simples (não array) e, se não for regista um erro semântico. 
+
+Se for, extrai-se o tipo declarado, \texttt{var\_type}, e compara-se com o tipo da expressão, \texttt{expr\_type}. 
+
+Se estes forem iguais, a atribuição é válida, pelo que se retorna logo.
+
+Se a variável é do tipo \texttt{real} e a expressão é do tipo \texttt{integer}, a atribuição também é válida, uma vez que no Pascal se permite essas conversões. 
+
+Se a variável é do tipo \texttt{integer} e a expressão é do tipo \texttt{real}, a atribuição não é válida, uma vez que no Pascal tal não é permitido, e, assim, regista-se um erro semântico. 
+
+Por fim, se nenhum dos casos acima se aplica, os tipos não são compatíveis, pelo que se regista um erro informando isso. 
+
+
+
+\vspace{1em}
+------------
+
+\vspace{1em}
+
+
+Esta função \texttt{\_report\_erros} é responsável por apresentar todos os erros semânticos encontrados. 
+
+Se a lista \texttt{self.erros} se encontra vazia, significa que não foi encontrado nenhum erro semântico, pelo que se imprime essa informação.
+
+Se ela tem elementos, significa que ocorrem erros semânticos, pelo que os imprimimos um a um. 
+
+
+% ------------------------------------------------------------
+\section{Geração de código para a máquina virtual}
+% ------------------------------------------------------------
+
+
+A fase de geração de código tem como objetivo transformar a \textit{AST} construída nas fases anteriores em instruções executáveis pela máquina virtual. Esta fase percorre a árvore de forma recursiva, convertendo cada nó numa sequência de instruções que preserva a semântica do programa fonte.
+
+O gerador de código foi implementado na classe CodeGenerator, que mantém uma lista de instruções e uma tabela de símbolos, permitindo aceder a informações sobre variáveis, arrays e seus tipos. A função principal desta fase, generate, recebe a \textit{AST} do programa e inicia a tradução a partir da função gen\_program, que controla a emissão das instruções iniciais e finais do programa.
+
+Cada bloco de instruções é processado pela função gen\_bloco, enquanto gen\_stmt identifica o tipo de cada comando e delega para funções específicas, como:
+
+Atribuições: Avalia a expressão associada à variável e armazena o resultado na posição correta da memória, realizando conversões de tipo quando necessário (por exemplo, de inteiro para real).
+
+Leitura e escrita de dados: Processa comandos de entrada (readln) e saída (writeln), tratando os tipos de dados adequadamente e convertendo valores quando necessário.
+
+Estruturas de controlo: Ciclos (for, while) e condicionais (if, ifelse) são traduzidos em instruções da máquina virtual com a criação de etiquetas únicas para controlar o fluxo de execução.
+
+Acesso e atribuição a arrays: Calcula endereços baseados na posição inicial e no índice, garantindo que os valores corretos sejam lidos ou armazenados.
+
+As expressões aritméticas, lógicas e de comparação são processadas pela função gen\_expr, que identifica os tipos dos operandos e gera instruções correspondentes. Operações envolvendo números reais e inteiros são tratadas com conversão automática para garantir a coerência dos cálculos. Operadores como soma, subtração, multiplicação, divisão, comparações e operações lógicas são traduzidos para instruções adequadas da máquina virtual.
+
+Esta abordagem modular permite que cada tipo de instrução seja tratado de forma independente, facilitando a manutenção e testes do compilador, e garantindo que o programa fonte seja corretamente interpretado e executado na máquina virtual.
+
+% ------------------------------------------------------------
+\subsection{Implementação}
+% ------------------------------------------------------------
+
+\vspace{1em}
+
+
+A classe \texttt{CodeGenerator} é responsável por converter a AST criada pelo parser e validada pela análise semântica em código, sendo este usado na Máquina Virtual disponibilizada. 
+
+Quando se cria uma instância desta classe, inicializa-se as variáveis: 
+
+
+\begin{itemize}
+  \item \texttt{symtab}, que representa a tabela de símbolos;
+  \item \texttt{code}, que vai ser uma lista, inicialmente vazia, que vai guardar as instruções da máquina virtual geradas durante esta fase;
+  \item \texttt{label\_counter}, que é um contador inteiro, inicializado a 0, para regar rótulos no código da VM. Por exemplo, quando temos loops, através de exemplos de códigos da VM, vemos que existem jumps para diferentes labels. Aqui, esse contador serve para gerar o nome dessas labels.
+\end{itemize}
+
+
+\vspace{1em}
+------------
+
+\vspace{1em}
+
+
+A função \texttt{emit} é uma função auxiliar usada para adicionar instruções à lista de código já produzido para a VM. Assim, recebendo uma \texttt{instr}, adiciona-a ao final da lista \texttt{code}. 
+
+
+
+\vspace{1em}
+------------
+
+
+\vspace{1em}
+
+
+A função \texttt{new\_label} é uma função auxiliar usada para gerar rótulos únicos, aqueles usados para jumps de ciclos, por exemplo. Recebendo um prefixo fixo, que por defeito é \texttt{‘L’}, retorna uma string combinando esse prefixo com o contador incrementado, garantindo que não se gera labels iguais.
+
+
+
+
+
+\vspace{1em}
+------------
+
+\vspace{1em}
+
+
+A função \texttt{\_ensure\_float\_operands} é uma função auxiliar usada para garantir que dois operandos estão no formato correto para operações aritméticas. 
+
+Assim, recebendo dois operandos, \texttt{lt} e \texttt{rt}, começa por verificar se ambos são \texttt{real} e, caso sejam, não é preciso fazer nada.
+
+Caso o \texttt{lt} seja \texttt{real}, mas o \texttt{rt} seja um \texttt{integer}, precisamos de o converter para \texttt{real}. Pela lógica da pilha apresentada na VM, \texttt{rt} estará no topo dela, pelo que só se emite uma instrução \texttt{ITOF} para o converter. 
+
+Caso seja ao contrário, \texttt{lt} \texttt{integer} e \texttt{rt} \texttt{real}, nós precisamos converter o primeiro. Mas, no topo da stack encontra-se o \texttt{rt}. Então trocamos estes, fazendo \texttt{SWAP}, e depois sim fazemos a conversão \texttt{ITOF} e voltamos a colocá-los nas posições iniciais com outro \texttt{SWAP}. 
+
+Caso ambos sejam do tipo \texttt{integer}, precisa-se converter ambos. Primeiro convertemos o \texttt{rt}, com \texttt{ITOF}, trocamos a ordem dois dois com o \texttt{SWAP} e convertemos o \texttt{lf} com o \texttt{ITOF}. No final, volta-se a trocar as posições deles. 
+
+
+\vspace{1em}
+------------
+
+\vspace{1em}
+
+
+A função \texttt{\_expr\_type} é usada para determinar o tipo de uma expressão presente na AST, utilizando uma lógica bastante semelhante à que foi usada na análise semântica. Será útil pois, ao longo da geração de código, precisamos saber qual operação usar, inteira ou real, ou se é necessário converter tipos das variáveis.
+
+Assim, começamos por obter a \texttt{tag}, que guarda o tipo da variável que está no \texttt{node} da AST. 
+
+Caso esse tipo seja um \texttt{num}, vamos verificar se o valor guardado nesse nó é um float ou não. Caso seja, então estamos perante um \texttt{real}, e se não for é um \texttt{integer}. 
+
+No caso de termos uma \texttt{string}, retornamos exatamente isso, e se tivermos algo como \texttt{true / false}, retornamos que é um \texttt{boolean}. 
+
+Se a tag for um \texttt{id}, então consultamos a tabela de símbolos, e obtemos o tipo dessa variável e, caso encontre, retornamos esse tipo.
+
+No caso de termos um \texttt{array\_acess}, vamos novamente consultar o tipo dos elementos desse array à tabela de símbolos, retornando-o se possível.
+
+Para operadores, \texttt{op}, começamos por extrair o operador, e as expressões relacionadas por ele, \texttt{l} e \texttt{r}, obtendo o tipo dessas expressões através de \texttt{\_expr\_type}. De seguida, aplica-se as regras do Pascal: 
+
+\begin{itemize}
+  \item Se o operador é \texttt{/}, devolve \texttt{real};
+  \item Se o operador é \texttt{div, mod}, devolve \texttt{integer};
+  \item Se o operador é \texttt{+,-,*}, devolve \texttt{real} se algum operando é desse tipo, ou  \texttt{integer} caso contrário;
+  \item Se o operador é \texttt{and, or}, devolve \texttt{boolean};
+\end{itemize}
+
+Para a \texttt{neg}, retornamos o tipo da expressão negada.
+
+Por fim, caso tenhamos \texttt{not}, retornamos um \texttt{boolean}.
+
+
+\vspace{1em}
+------------
+
+\vspace{1em}
+
+
+A função \texttt{generate} é o ponto principal desta fase, sendo que recebe uma AST e retorna a string com todas as instruções geradas. Esta invoca a função \texttt{gen\_program}.
+
+Essa função \texttt{gen\_program} é responsável por processar o nó raiz dessa AST, que possui o formanto \texttt{(‘programa’, nome, decls, bloco)}. Assim, extrai o bloco de comandos, envolvendo a sua geração de código dentro de instruções \texttt{START} e \texttt{STOP}. 
+
+Por fim, a função \texttt{gen\_bloco} vai fazer e geração de instruções para esse bloco principal. Ela vai pegar na lista de comandos, \texttt{stmts}, presentes nesse bloco e, para cada comando dentro dessa lista, vai gerar o código correspondente, com a função \texttt{gen\_stmt}. 
+
+
+\vspace{1em}
+------------
+
+\vspace{1em}
+
+
+A função \texttt{gen\_stmt} é a função principal para gerar o código da VM para os comandos presentes no bloco principal. Recebendo como argumento a AST, ela começa por extrair a \texttt{tag}, que identifica o tipo de comando com que ela está a lidar.
+Ora, dependendo desse tipo de comando, vai chamar a função correspondente e caos obtenha um tipo não conhecido, lança uma exceção, dizendo que esse tipo ainda não foi implementado no gerador de código. 
+
+
+\vspace{1em}
+------
+
+{\normalsize \textbf{Atribuição}}
+
+\vspace{1em}
+
+
+No caso de se ter um tipo \texttt{atribuicao}, chama-se esta função \texttt{gen\_atribuicao}. 
+
+Recebendo um nó do tipo \texttt{(‘atribuicao’, nome\_var, expr)}, vai extrair essas componentes, guardando em \texttt{var} e em \texttt{expr}. 
+
+De seguida, vai procurar o símbolo correspondente à variável na tabela de símbolos, obtendo o seu tipo.
+
+Assim, vai gerar o código da VM para a expressão através de \texttt{gen\_expr}.
+
+Por fim, vai se verificar se o tipo da variável é \texttt{real} e se o tipo da expressão é \texttt{integer}. Nesses casos, é preciso realizar uma conversão, pelo que se emite uma instrução \texttt{ITOF}. 
+
+Após isso, adiciona-se a instrução \texttt{STOREL offset}, que pega no último elemento da pilha e o armazena na variável identificada pelo seu offset.
+
+
+\vspace{1em}
+------
+
+{\normalsize \textbf{Readln}}
+
+\vspace{1em}
+
+
+No caso de se ter um tipo \texttt{readln}, chama-se esta função \texttt{gen\_readln}. 
+
+Recebendo um nó do tipo \texttt{(‘readl’, lista\_args)}, começa por extrair essa lista e vai iterar por cada elemento dela.
+
+Caso estejamos perante um argumento que seja \texttt{id}, estamos perante uma variável simples, pelo que extraímos o seu nome, \texttt{var}, e procuramos-la na tabela de símbolos, emitindo já uma instrução \texttt{READ}.
+De seguida, convertemos a string para o devido tipo: se \texttt{var} é do tipo \texttt{integer}, usa-se \texttt{ATOI}, e caso seja do tipo \texttt{real} usa-se \texttt{ATOF}. 
+No fim, emite-se \texttt{STOREL offset}, que pega no valor convertido e armazena-o na variável.
+
+Caso estejamos perante um argumento que seja \texttt{array\_acess}, extrai-se o nome do arrar, \texttt{var}, e a expressão referente ao índice a que queremos aceder, \texttt{index\_expr}, procurando na tabela de símbolos o array. 
+De seguida, vai se calcular o endereço de memória do elemento a ser acedido: emite-se um \texttt{PUSHFP} que empilha o valor do FP, depois um \texttt{PUSHI offset} que empilha o offset base do array e, por fim, um \texttt{PADD} que desempilha ambos os valores e guarda a sua soma, obtendo o endereço base do array em memória. 
+Vai-se então gerar o código para a expressão referente ao índice. 
+Se o array tem um limite inferior, normaliza-se o índice subtraindo esse limite- \texttt{PUSHI sym.lower} para guardar o limite inferior na stack, e faz-se \texttt{SUB} para executar a subtração.
+Emite-se ainda um \texttt{PADD} para calcular o endereço do elemento específico, sendo que, de seguida, se emite um \texttt{READ} que vai ler uma linha e guardar uma string. 
+Convertemos tal string para o seu tipo apropriado: se o elemento é \texttt{integer}, emite-se \texttt{ATOI}, se é \texttt{real}, emite-se \texttt{ATOF}.
+Finalmente, adiciona-se a instrução \texttt{STORE 0} que pega no valor convertido e guarda-o no topo da pilha.
+
+Se não é nenhum dos casos, lançamos uma exceção informando isso.
+
+
+\vspace{1em}
+------
+
+{\normalsize \textbf{Writeln}}
+
+\vspace{1em}
+
+
+No caso de se ter um tipo \texttt{writeln}, chama-se esta função \texttt{gen\_writeln}. 
+
+Recebendo um nó do tipo \texttt{(‘writeln’, lista\_exprs)}, vai extrair essa lista e iterar por cada expressão presente nela. 
+
+Se a expressão é uma \texttt{string}, então emite um \texttt{PUSHS valor}, que guarda a string no topo da stack, seguido de um \texttt{WRITES}, que escreve a string para o output.
+
+Se a expressão é um \texttt{boolean}, converte-se esse valor para inteiro (0 ou 1), guardando-o no topo da stack através de \texttt{PUSHI}, e escrevendo-o com \texttt{WRITEI} no output.
+
+Para qualquer outro caso, gera-se o código chamando \texttt{gen\_expr}, que vai guardar na stack o seu valor. De seguida, vai se determinar o tipo da expressão, com \texttt{\_expr\_type}, e se esse tipo for \texttt{real}, usa-se \texttt{WRITEF} e caso contrário \texttt{WRITEI}, para escrever o resultado no output.
+
+Por fim, faz-se um \texttt{WRITELN}, que escreve um \texttt{ barra n}, marcando o final deste comando.
+
+
+\vspace{1em}
+------
+
+{\normalsize \textbf{For}}
+
+\vspace{1em}
+
+
+No caso de se ter um tipo \texttt{for}, chama-se esta função \texttt{gen\_for\_to}. 
+
+Recebendo um nó do tipo \texttt{(‘for\_to’, va, expr\_inicio, expr\_fim, corpo)}, vai se extrair a variável de controlo, \texttt{var}, a expressão de ínicio e fim, \texttt{start, end}, e os comandos a executar dentro do for, \texttt{body}, procurando ainda na tabela de símbolos essa \texttt{var}. 
+
+Vai se gerar aqui dois labels únicos, um para o ínicio do ciclo, \texttt{start\_label}, e outro para o fim, \texttt{end\_label}. 
+
+De seguida, vamos gerar o código de inicialização, em que se gera o código VM para a expressão de ínicio, guardando no topo da stack o seu valor, emite-se um \texttt{STOREL offset}, que pega nesse valor e o guarda na \texttt{var}, e emitimos ainda a marcação do ínicio do ciclo.
+
+Com isto, emite-se um \texttt{PUSHL offset} que guarda o valor atual de \texttt{var}, pelo que a seguir se gera o código VM da expressão de fim, guardando esse valor no topo da stack. 
+
+Com \texttt{INFEQ} compara os dois valores no topo, deixando lá 1 se for verdadeiro (<=) ou 0 se for falso. Caso a condição seja false, o \texttt{JZ end\_label} faz com que salte para essa label, terminando assim o ciclo.
+
+Se a condição for verdadeira, executa-se o corpo do ciclo, com \texttt{gen\_stmt (body)}, em que fazemos \texttt{PUSHL offset} para guardar o valor atual, \texttt{PUSHI 1} e \texttt{ADD}, somando esses dois valores. Fazemos ainda \texttt{STOREL offset} e \texttt{JUMP start_label}, de modo a voltar ao início do ciclo. 
+
+No fim, marca-se \texttt{end\_label} como ponto para sair deste for. 
+
+
+\vspace{1em}
+------
+
+{\normalsize \textbf{While}}
+
+\vspace{1em}
+
+
+No caso de se ter um tipo \texttt{while}, chama-se esta função \texttt{gen\_while}. 
+
+Recebendo um nó do tipo \texttt{(‘while’, expr\_condicao, corpo)}, vai se extrair a condição, \texttt{cond}, e os comandos a executar dentro do ciclo, \texttt{body}.
+
+Vai se gerar novamente duas labels- \texttt{start\_label, end\_label}, marcando a de início.
+
+De seguida, geramos o código VM para a expressão condicional, guardando no topo da pilha o valor (verdadeiro ou falso).
+
+Emite-se ainda \texttt{JZ end\_label} que salta para o fim do ciclo se a condição for falsa.
+
+Se for verdadeira, executa o corpo e, no fim disso, emite-se um \texttt{JUMP start\_label}, indicando que se volta ao início do ciclo.
+
+No fim, marca-se o \texttt{end\_label}, como ponto de saída do ciclo. 
+
+\vspace{1em}
+------
+
+{\normalsize \textbf{If}}
+
+\vspace{1em}
+
+
+No caso de se ter um tipo \texttt{if}, chama-se esta função \texttt{gen\_if}. 
+
+Recebendo um nó do tipo \texttt{(‘if’, expr\_condicao, cmd\_then)} ou \texttt{(‘if’, expr\_condicao, cmd\_then, cmd\_else)}, vai extrair o rótulo do nó. 
+
+Caso esse seja \texttt{if}, extrai-se a condição, \texttt{cond}, e os comandos do \texttt{then\_stmt}, definindo ainda que não há else.
+
+Caso esse seja \texttt{ifelse}, extrai-se a condição, \texttt{cond}, e os comandos do \texttt{then\_stmt} e do \texttt{else\_stmt}.
+
+Geram-se então dois labels. \texttt{else\_label} para marcar o início do ramo else, e \texttt{end\_label} para marcar o fim.
+
+Gera-se o código da expressão, guardando no topo da stack o resultado (verdadeiro ou falso), emitindo ainda um \texttt{JZ else\_label}, que salta para a label else se for falso.
+
+Caso seja verdadeiro, executa-se o comando then. Após esse ramo then, emite-se \texttt{JUMP end\_label}, saltando para o fim, e marcando  a label \texttt{else\_label}, sendo esse o ponto de entrada do ramo else (ou fim se este não existir). 
+
+Se existir tal else, vai se executá-lo, marcando no fim \texttt{end\_label}, para sair deste if.
+
+
+\vspace{1em}
+------
+
+{\normalsize \textbf{Atribuição array}}
+
+\vspace{1em}
+
+
+No caso de se ter um tipo \texttt{atribuicao\_array}, chama-se esta função \texttt{gen\_atribuicao\_array}. 
+
+Recebendo um nó do tipo \texttt{(‘atribuicao\_array’, nome\_array, expr\_indice, expr\_valor)}, vai se extrair o nome dele, \texttt{var}, o índice a ser acedido, \texttt{index\_expr}, e a expressão a ser atribuída, \texttt{expr}, procurando na tabela de símbolos o array.
+
+Calcula-se o endereço de memória do elemento que estamos a aceder do array, fazendo \texttt{PUSHFP}, metendo no topo da stack o FP, \texttt{PUSHI offset}, empilhando o offset base do array, e \texttt{PADD} somando esses dois valores, obtendo assim o endereço base do array. 
+
+Gera-se então o código para a expressão que indica o índice a ser acedido do array, guardando esse valor no topo da pilha.
+
+Se o array tem limite inferior, normaliza-se o índice: \texttt{PUSHI sym.lower}, empilhando o limite inferior, \texttt{SUB}, fazendo índice - lower.
+
+Faz-se \texttt{PADD} que calcula o endereço final do elemento e, de seguida, gera-se o código para a expressão que se vai atribuir a esse elemento.
+
+Determinamos ainda o tipo da expressão, e se o elemento tiver tipo \texttt{real} mas ela é do tipo \texttt{integer}, emite-se um \texttt{ITOF} para converter. 
+
+Por fim, emite-se um \texttt{STORE 0} de modo a pegar no valor obtido e o guardar no topo da pilha.
+
+
+\vspace{1em}
+------------
+
+\vspace{1em}
+
+
+A função \texttt{gen\_expr} é responsável por gerar código para a VM de expressões. Recebendo um nó da AST que representa uma expressão, ela emite o código referente da VM. 
+
+Começa por extrair \texttt{tag}m que identifica o tipo de expressão. 
+
+\vspace{1em}
+{\normalsize \textbf{Literais Numéricos}}
+\vspace{1em}
+
+Para números, representados por \texttt{(‘num’, valor)}, primeiro extrai-se esse valor e vê-se o seu tipo.
+
+Se for um float, fazemos um \texttt{PUSHF}, que mete o valor \texttt{real} no topo da stack.
+
+Caso contário, fazemos um \texttt{PUSHI}, que mete o valor \texttt{inteiro} no topo da stack.
+
+\vspace{1em}
+{\normalsize \textbf{Id}}
+\vspace{1em}
+
+Para identificadores, representados por \texttt{(‘id’, nome)}, primeiro procura-se o símbolo correspondente na tabela de símbolos, obtendo o seu offset de memória. 
+
+Depois, emite-se um \texttt{PUSHL offset}, que carrega o valor da variável- armazenada no offset relativo ao FP- e mete-o no topo da stack
+
+\vspace{1em}
+{\normalsize \textbf{Operadores}}
+\vspace{1em}
+
+Para operadores binários, representados por \texttt{(‘op’, operador, expr\_esq, expr\_dir)}, extrai-se o operador, \texttt{op}, e ambas as expressões, \texttt{left, right}, obtendo ainda o tipo destas e gerando o código VM para ambas.
+
+\begin{itemize}
+  \item \textbf{O operador é \texttt{+} }: 
+  \begin{itemize}
+      \item se ambos os operandos são \texttt{real}, chama-se a função \texttt{\_ensure\_float\_operands} para os converter para reais na stack, e depois usa-se \texttt{FADD} para os somar;
+      \item caso contrário, apenas se usa \texttt{ADD} para os somar.
+    \end{itemize}
+  \item \textbf{O operador é \texttt{-} }: 
+  \begin{itemize}
+      \item se ambos os operandos são \texttt{real}, chama-se a função \texttt{\_ensure\_float\_operands} para os converter para reais na stack, e depois usa-se \texttt{FSUB} para os subtrair;
+      \item caso contrário, apenas se usa \texttt{SUB} para os subtrair.
+    \end{itemize}
+  \item \textbf{O operador é \texttt{*} }: 
+  \begin{itemize}
+      \item se ambos os operandos são \texttt{real}, chama-se a função \texttt{\_ensure\_float\_operands} para os converter para reais na stack, e depois usa-se \texttt{FMULT} para os multiplicar;
+      \item caso contrário, apenas se usa \texttt{MUL} para os multiplicar.
+    \end{itemize}
+\item \textbf{O operador é \texttt{/} }: esta em Pascal é sempre \texttt{real}, pelo que se transfora os operandos são transformados em tal, e, no fim, emite-se \texttt{FDIV} para os dividir;
+\item \textbf{O operador é \texttt{div} }: emite-se \texttt{DIV} para os dividir;
+\item \textbf{O operador é \texttt{mod} }: emite-se \texttt{mod};
+ \item \textbf{O operador é \texttt{<=} }: 
+  \begin{itemize}
+      \item se ambos os operandos são \texttt{real}, chama-se a função \texttt{\_ensure\_float\_operands} para os converter para reais na stack, e depois usa-se \texttt{FINFEQ} para verificar esse operador;
+      \item caso contrário, apenas se usa \texttt{INFEQ} para os verificar tal operador.
+    \end{itemize}
+ \item \textbf{O operador é \texttt{<} }: 
+  \begin{itemize}
+      \item se ambos os operandos são \texttt{real}, chama-se a função \texttt{\_ensure\_float\_operands} para os converter para reais na stack, e depois usa-se \texttt{FINF} para verificar esse operador;
+      \item caso contrário, apenas se usa \texttt{INF} para os verificar tal operador.
+    \end{itemize}
+ \item \textbf{O operador é \texttt{>=} }: 
+  \begin{itemize}
+      \item se ambos os operandos são \texttt{real}, chama-se a função \texttt{\_ensure\_float\_operands} para os converter para reais na stack, e depois usa-se \texttt{FSUPEQ} para verificar esse operador;
+      \item caso contrário, apenas se usa \texttt{SUPEQ} para os verificar tal operador.
+    \end{itemize}
+ \item \textbf{O operador é \texttt{>} }: 
+  \begin{itemize}
+      \item se ambos os operandos são \texttt{real}, chama-se a função \texttt{\_ensure\_float\_operands} para os converter para reais na stack, e depois usa-se \texttt{FSUP} para verificar esse operador;
+      \item caso contrário, apenas se usa \texttt{SUP} para os verificar tal operador.
+    \end{itemize}
+\item \textbf{O operador é \texttt{and} }: emite-se \texttt{AND};
+\item \textbf{O operador é \texttt{or} }: emite-se \texttt{OR};
+ \item \textbf{O operador é \texttt{=} }: 
+  \begin{itemize}
+      \item se ambos os operandos são \texttt{real}, chama-se a função \texttt{\_ensure\_float\_operands} para os converter para reais na stack;
+      \item depois, usa-se a instrução \texttt{EQUAL};
+    \end{itemize}
+ \item \textbf{O operador é \texttt{<>} }: 
+  \begin{itemize}
+      \item se ambos os operandos são \texttt{real}, chama-se a função \texttt{\_ensure\_float\_operands} para os converter para reais na stack;
+      \item depois, usa-se a instrução \texttt{EQUAL}, que guarda no topo 1 ou 0. Depois, compara-se o resultado com 0, através de outro \texttt{EQUAL} (a<>b é equivalente a not(a=b));
+    \end{itemize}
+\end{itemize}
+
+\vspace{1em}
+{\normalsize \textbf{Neg}}
+\vspace{1em}
+
+Para a negação, representada por \texttt{(‘neg’, expr)}, começa-se por avaliar o tipo dessa \texttt{expr}. 
+
+Se é \texttt{real}, emite-se um \texttt{PUSHF 0.0} para meter no topo da pilha \texttt{0.0}, e depois gera-se o código dessa expressão, emitindo ao fim um \texttt{FSUB}, para calcular \texttt{0.0 - valor da expressão}, realizando a negação.
+
+Se é \texttt{integer}, segue a mesma lógica, só que com as instruções \texttt{PUSHI 0}, geração do código da expressão, \texttt{SUB}.
+
+\vspace{1em}
+{\normalsize \textbf{Not}}
+\vspace{1em}
+
+Para a negação lógica, representada por \texttt{(‘not’, expr)}, começa-se por gerar o código para a expressão, guardando no topo 1 ou 0 e, ao fim disso, fazendo \texttt{PUSHI 0, EQUAL}, comparando o resultado com 0, inventando o seu valor booleano.
+
+\vspace{1em}
+{\normalsize \textbf{True}}
+\vspace{1em}
+
+Para o valor booleano \texttt{true}, emite-se \texttt{PUSHI 1}.
+
+\vspace{1em}
+{\normalsize \textbf{False}}
+\vspace{1em}
+
+Para o valor booleano \texttt{false}, emite-se \texttt{PUSHI 0}.
+
+\vspace{1em}
+{\normalsize \textbf{Acesso a array}}
+\vspace{1em}
+
+Para o acesso a arrays, representado por \texttt{(‘array\_acess’, nome\_array, expr\_indice)}, começa-se por extrair o nome, \texttt{var}, e o indice, \texttt{index\_expr}, procurando na tabela de símbolos esse array. 
+
+De seguida, calcula-se o endereço de memória do elemento: \texttt{PUSHFP} (empilha o FP), \texttt{PUSHI offset} (empilha o offset base do array), \texttt{PADD} (calcula e empilha o endereço base do array em memória).
+
+Depois, gera-se o código para a expressão do índice, empilhando esse valor.
+
+Se o array tem limite inferior, normaliza-se o índice: \texttt{PUSHI lower} (empilha o limite inferior), \texttt{SUB} (calcula índice - lower). 
+
+Emite-se \texttt{PADD}, que adiciona o índice ao endereço base, calculando o endereço final do elemento, e, por fim, \texttt{LOAD 0}, que carrega o valor armazenado no endereço que estava no topo da stack, e coloca no topo esse valor.
+
+\vspace{1em}
+{\normalsize \textbf{Fallback}}
+\vspace{1em}
+
+Para terminar, se a expressão é de um tipo desconhecido, lança-se um erro, informando isso.
+
+% ----------------------------------------------------------------------
+\chapter{Avaliação Experimental}
+
+Neste capítulo, apresentamos os testes que realizamos para validar a funcionalidade e a correção todas as etapas do compilador que foi desenvolvido.
+
+Desenvolvemos exemplos para as 4 fases de construção do mesmo: análise léxica (lexer), análise sintática (parser), análise semântica e geração de código para a máquina virtual, tendo sido cada uma destas fases testada de forma isolada e integrada.
+
+Os resultados apresentados neste capítulo validam a implementação das várias componentes do compilador e demonstram a sua robustez na deteção e reportagem de erros.
+
+% ----------------------------------------------------------------------
+% ----------------------------------------------------------------------
+\section{Testes do Lexer}
+
+A análise léxica é a primeira etapa do compilador, responsável por converter o código fonte numa sequência de tokens.
+
+% ----------------------------------------------------------------------
+\subsection{Exemplo 1}
+
+Este corresponde a um exemplo mais simples, em que apenas se cria variáveis \texttt{x,y} e se atribui o valor \texttt{10} à \texttt{x}, e, em \texttt{y} guardamos o resultado de \texttt{x ' 20}, imprimindo esse valor.
+
+\vspace{1em}
+\textbf{Código de entrada:}
+
+\begin{lstlisting}
+program exemplo;
+var x, y: integer;
+begin
+    x := 10;
+    y := x + 20;
+    writeln(y);
+end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Elementos testados:}
+
+\begin{itemize}
+    \item Palavras chave: \texttt{program, var, begin, writeln, end};
+    \item Identificadores: \texttt{exemplo, x, y};
+    \item Tipos: \texttt{atribuicao (:=), soma (+)}
+    \item Delimitadores: \texttt{';', ',' , parênteses, '.'}
+\end{itemize}
+
+\vspace{1em}
+\textbf{Tokens esperados:} espera-se que o lexer produza uma sequência de tokens começando com \texttt{PROGRAM}, seguido de \texttt{ID}, \texttt{PONTEVIRG, NUM}, e sucessivamente os tokens correspondentes a cada elemento léxico do código, terminando com \texttt{END PONTO}.
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+LexToken(PROGRAM,'program',2,1)
+LexToken(ID,'exemplo',2,9)
+LexToken(PONTOEVIRG,';',2,16)
+LexToken(VAR,'var',3,18)
+LexToken(ID,'x',3,22)
+LexToken(VIRG,',',3,23)
+LexToken(ID,'y',3,25)
+LexToken(DOISPONTOS,':',3,26)
+LexToken(INTEGER,'integer',3,28)
+LexToken(PONTOEVIRG,';',3,35)
+LexToken(BEGIN,'begin',4,37)
+LexToken(ID,'x',5,47)
+LexToken(ATRIBUICAO,':=',5,49)
+LexToken(NUM,10,5,52)
+LexToken(PONTOEVIRG,';',5,54)
+LexToken(ID,'y',6,60)
+LexToken(ATRIBUICAO,':=',6,62)
+LexToken(ID,'x',6,65)
+LexToken(SOMA,'+',6,67)
+LexToken(NUM,20,6,69)
+LexToken(PONTOEVIRG,';',6,71)
+LexToken(WRITELN,'writeln',7,77)
+LexToken(LPAREN,'(',7,84)
+LexToken(ID,'y',7,85)
+LexToken(RPAREN,')',7,86)
+LexToken(PONTOEVIRG,';',7,87)
+LexToken(END,'end',8,89)
+LexToken(PONTO,'.',8,92)
+\end{lstlisting}
+
+Como vemos através desse output obtido, todos os tokens são corretamente identificados e classificados, validando o lexer criado, para este exemplo.
+
+% --------------------
+\subsection{Exemplo 2}
+
+Este corresponde ao segundo exemplo apresentado no enunciado do projeto.
+
+\vspace{1em}
+\textbf{Código de entrada:}
+
+\begin{lstlisting}
+program Fatorial;
+var
+    n, i, fat: integer;
+begin
+    writeln('Introduza um numero inteiro positivo:');
+    readln(n);
+    fat := 1;
+    for i := 1 to n do
+        fat := fat * i;
+    writeln('Fatorial de ', n, ': ', fat);
+end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Elementos testados:}
+
+\begin{itemize}
+    \item Ciclo \texttt{for}, com palavras chave \texttt{for, to, do};
+    \item Strings literais com espaços e pontuação;
+    \item Múltiplos identificadores em lista;
+    \item Operador de multiplicação e comando \texttt{readln};
+    \item Múltiplos argumentos no comando \texttt{writeln};
+\end{itemize}
+
+\vspace{1em}
+\textbf{Tokens esperados:} espera-se que o lexer identifique \texttt{FOR, TO DO, STRING, READL, MULT, WRITELN}.
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+LexToken(PROGRAM,'program',2,1)
+LexToken(ID,'Fatorial',2,9)
+LexToken(PONTOEVIRG,';',2,17)
+LexToken(VAR,'var',3,19)
+LexToken(ID,'n',4,23)
+LexToken(VIRG,',',4,24)
+LexToken(ID,'i',4,26)
+LexToken(VIRG,',',4,27)
+LexToken(ID,'fat',4,29)
+LexToken(DOISPONTOS,':',4,32)
+LexToken(INTEGER,'integer',4,34)
+LexToken(PONTOEVIRG,';',4,41)
+LexToken(BEGIN,'begin',5,43)
+LexToken(WRITELN,'writeln',6,49)
+LexToken(LPAREN,'(',6,56)
+LexToken(STRING,'Introduza um numero inteiro positivo:',6,57)
+LexToken(RPAREN,')',6,96)
+LexToken(PONTOEVIRG,';',6,97)
+LexToken(READLN,'readln',7,99)
+LexToken(LPAREN,'(',7,105)
+LexToken(ID,'n',7,106)
+LexToken(RPAREN,')',7,107)
+LexToken(PONTOEVIRG,';',7,108)
+LexToken(ID,'fat',8,110)
+LexToken(ATRIBUICAO,':=',8,114)
+LexToken(NUM,1,8,117)
+LexToken(PONTOEVIRG,';',8,118)
+LexToken(FOR,'for',9,120)
+LexToken(ID,'i',9,124)
+LexToken(ATRIBUICAO,':=',9,126)
+LexToken(NUM,1,9,129)
+LexToken(TO,'to',9,131)
+LexToken(ID,'n',9,134)
+LexToken(DO,'do',9,136)
+LexToken(ID,'fat',10,139)
+LexToken(ATRIBUICAO,':=',10,143)
+LexToken(ID,'fat',10,146)
+LexToken(MULT,'*',10,150)
+LexToken(ID,'i',10,152)
+LexToken(PONTOEVIRG,';',10,153)
+LexToken(WRITELN,'writeln',11,155)
+LexToken(LPAREN,'(',11,162)
+LexToken(STRING,'Fatorial de ',11,163)
+LexToken(VIRG,',',11,177)
+LexToken(ID,'n',11,179)
+LexToken(VIRG,',',11,180)
+LexToken(STRING,': ',11,182)
+LexToken(VIRG,',',11,186)
+LexToken(ID,'fat',11,188)
+LexToken(RPAREN,')',11,191)
+LexToken(PONTOEVIRG,';',11,192)
+LexToken(END,'end',12,194)
+LexToken(PONTO,'.',12,197)
+\end{lstlisting}
+
+Como vemos através desse output obtido, todos os tokens são corretamente identificados e classificados, validando o lexer criado, para este exemplo.
+
+
+
+% --------------------
+\subsection{Exemplo 3}
+
+Este corresponde ao terceiro exemplo apresentado no enunciado do projeto.
+
+\vspace{1em}
+\textbf{Código de entrada:}
+
+\begin{lstlisting}
+program NumeroPrimo;
+    var
+        num, i: integer;
+        primo: boolean;
+    begin
+        writeln('Introduza um numero inteiro positivo:');
+        readln(num);
+        primo := true;
+        i := 2;
+        while (i <= (num div 2)) and primo do
+        begin
+            if (num mod i) = 0 then
+            primo := false;
+            i := i + 1;
+        end;
+        if primo then
+        writeln(num, ' e um numero primo')
+        else
+        writeln(num, ' nao e um numero primo')
+    end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Elementos testados:}
+
+\begin{itemize}
+    \item Tipo \texttt{boolean} e os valores \texttt{true, false};
+    \item Ciclo \texttt{while};
+    \item Operadores relacionais, \texttt{<=}, aritméticos, \texttt{div, mod}, e lógicos, \texttt{and};
+    \item Condicionais \texttt{if-then, if-then-else};
+\end{itemize}
+
+\vspace{1em}
+\textbf{Tokens esperados:} espera-se que o lexer identifique \texttt{BOOLEAN, TRUE, FALSE, WHILE, DIV, MOD, AND, IF, THEN, ELSE, MENORIGUAL}.
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+LexToken(PROGRAM,'program',2,1)
+LexToken(ID,'NumeroPrimo',2,9)
+LexToken(PONTOEVIRG,';',2,20)
+LexToken(VAR,'var',3,26)
+LexToken(ID,'num',4,38)
+LexToken(VIRG,',',4,41)
+LexToken(ID,'i',4,43)
+LexToken(DOISPONTOS,':',4,44)
+LexToken(INTEGER,'integer',4,46)
+LexToken(PONTOEVIRG,';',4,53)
+LexToken(ID,'primo',5,63)
+LexToken(DOISPONTOS,':',5,68)
+LexToken(BOOLEAN,'boolean',5,70)
+LexToken(PONTOEVIRG,';',5,77)
+LexToken(BEGIN,'begin',6,83)
+LexToken(WRITELN,'writeln',7,97)
+LexToken(LPAREN,'(',7,104)
+LexToken(STRING,'Introduza um numero inteiro positivo:',7,105)
+LexToken(RPAREN,')',7,144)
+LexToken(PONTOEVIRG,';',7,145)
+LexToken(READLN,'readln',8,155)
+LexToken(LPAREN,'(',8,161)
+LexToken(ID,'num',8,162)
+LexToken(RPAREN,')',8,165)
+LexToken(PONTOEVIRG,';',8,166)
+LexToken(ID,'primo',9,176)
+LexToken(ATRIBUICAO,':=',9,182)
+LexToken(TRUE,'true',9,185)
+LexToken(PONTOEVIRG,';',9,189)
+LexToken(ID,'i',10,199)
+LexToken(ATRIBUICAO,':=',10,201)
+LexToken(NUM,2,10,204)
+LexToken(PONTOEVIRG,';',10,205)
+LexToken(WHILE,'while',11,215)
+LexToken(LPAREN,'(',11,221)
+LexToken(ID,'i',11,222)
+LexToken(MENORIGUAL,'<=',11,224)
+LexToken(LPAREN,'(',11,227)
+LexToken(ID,'num',11,228)
+LexToken(DIV,'div',11,232)
+LexToken(NUM,2,11,236)
+LexToken(RPAREN,')',11,237)
+LexToken(RPAREN,')',11,238)
+LexToken(AND,'and',11,240)
+LexToken(ID,'primo',11,244)
+LexToken(DO,'do',11,250)
+LexToken(BEGIN,'begin',12,261)
+LexToken(IF,'if',13,279)
+LexToken(LPAREN,'(',13,282)
+LexToken(ID,'num',13,283)
+LexToken(MOD,'mod',13,287)
+LexToken(ID,'i',13,291)
+LexToken(RPAREN,')',13,292)
+LexToken(IGUAL,'=',13,294)
+LexToken(NUM,0,13,296)
+LexToken(THEN,'then',13,298)
+LexToken(ID,'primo',14,315)
+LexToken(ATRIBUICAO,':=',14,321)
+LexToken(FALSE,'false',14,324)
+LexToken(PONTOEVIRG,';',14,329)
+LexToken(ID,'i',15,343)
+LexToken(ATRIBUICAO,':=',15,345)
+LexToken(ID,'i',15,348)
+LexToken(SOMA,'+',15,350)
+LexToken(NUM,1,15,352)
+LexToken(PONTOEVIRG,';',15,353)
+LexToken(END,'end',16,363)
+LexToken(PONTOEVIRG,';',16,366)
+LexToken(IF,'if',17,376)
+LexToken(ID,'primo',17,379)
+LexToken(THEN,'then',17,385)
+LexToken(WRITELN,'writeln',18,398)
+LexToken(LPAREN,'(',18,405)
+LexToken(ID,'num',18,406)
+LexToken(VIRG,',',18,409)
+LexToken(STRING,' e um numero primo',18,411)
+LexToken(RPAREN,')',18,431)
+LexToken(ELSE,'else',19,441)
+LexToken(WRITELN,'writeln',20,454)
+LexToken(LPAREN,'(',20,461)
+LexToken(ID,'num',20,462)
+LexToken(VIRG,',',20,465)
+LexToken(STRING,' nao e um nemero primo',20,467)
+LexToken(RPAREN,')',20,491)
+LexToken(END,'end',21,497)
+LexToken(PONTO,'.',21,500)
+\end{lstlisting}
+
+Como vemos através desse output obtido, todos os tokens são corretamente identificados e classificados, validando o lexer criado, para este exemplo.
+
+% --------------------
+\subsection{Exemplo 4}
+
+Este corresponde ao quarto exemplo apresentado no enunciado do projeto.
+
+\vspace{1em}
+\textbf{Código de entrada:}
+
+\begin{lstlisting}
+program SomaArray;
+    var
+        numeros: array[1..5] of integer;
+        i, soma: integer;
+    begin
+        soma := 0;
+        writeln('Introduza 5 numeros inteiros:');
+        for i := 1 to 5 do
+            begin
+                readln(numeros[i]);
+                soma := soma + numeros[i];
+            end;
+        writeln('A soma dos numeros e: ', soma);
+    end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Elementos testados:}
+
+\begin{itemize}
+    \item Palavras chave: \texttt{array, of};
+    \item Intervalo de array \texttt{[1..5]};
+    \item Acesso a elementos do array com \texttt{[indice]};
+    \item Atribuições envolvendo elementos de arrays;
+    \item Operações aritméticas com elementos de arrays;
+\end{itemize}
+
+\vspace{1em}
+\textbf{Tokens esperados:} espera-se que o lexer identifique \texttt{ARRAY, OF, LBRACKET, INTERVALO, RBRACKED} e, para além disso, os índices devem ser corretamente tokenizados.
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+LexToken(PROGRAM,'program',2,1)
+LexToken(ID,'SomaArray',2,9)
+LexToken(PONTOEVIRG,';',2,18)
+LexToken(VAR,'var',3,20)
+LexToken(ID,'numeros',4,24)
+LexToken(DOISPONTOS,':',4,31)
+LexToken(ARRAY,'array',4,33)
+LexToken(LBRACKET,'[',4,38)
+LexToken(NUM,1,4,39)
+LexToken(INTERVALO,'..',4,40)
+LexToken(NUM,5,4,42)
+LexToken(RBRACKET,']',4,43)
+LexToken(OF,'of',4,45)
+LexToken(INTEGER,'integer',4,48)
+LexToken(PONTOEVIRG,';',4,55)
+LexToken(ID,'i',5,57)
+LexToken(VIRG,',',5,58)
+LexToken(ID,'soma',5,60)
+LexToken(DOISPONTOS,':',5,64)
+LexToken(INTEGER,'integer',5,66)
+LexToken(PONTOEVIRG,';',5,73)
+LexToken(BEGIN,'begin',6,75)
+LexToken(ID,'soma',7,81)
+LexToken(ATRIBUICAO,':=',7,86)
+LexToken(NUM,0,7,89)
+LexToken(PONTOEVIRG,';',7,90)
+LexToken(WRITELN,'writeln',8,92)
+LexToken(LPAREN,'(',8,99)
+LexToken(STRING,'Introduza 5 numeros inteiros:',8,100)
+LexToken(RPAREN,')',8,131)
+LexToken(PONTOEVIRG,';',8,132)
+LexToken(FOR,'for',9,134)
+LexToken(ID,'i',9,138)
+LexToken(ATRIBUICAO,':=',9,140)
+LexToken(NUM,1,9,143)
+LexToken(TO,'to',9,145)
+LexToken(NUM,5,9,148)
+LexToken(DO,'do',9,150)
+LexToken(BEGIN,'begin',10,153)
+LexToken(READLN,'readln',11,159)
+LexToken(LPAREN,'(',11,165)
+LexToken(ID,'numeros',11,166)
+LexToken(LBRACKET,'[',11,173)
+LexToken(ID,'i',11,174)
+LexToken(RBRACKET,']',11,175)
+LexToken(RPAREN,')',11,176)
+LexToken(PONTOEVIRG,';',11,177)
+LexToken(ID,'soma',12,179)
+LexToken(ATRIBUICAO,':=',12,184)
+LexToken(ID,'soma',12,187)
+LexToken(SOMA,'+',12,192)
+LexToken(ID,'numeros',12,194)
+LexToken(LBRACKET,'[',12,201)
+LexToken(ID,'i',12,202)
+LexToken(RBRACKET,']',12,203)
+LexToken(PONTOEVIRG,';',12,204)
+LexToken(END,'end',13,206)
+LexToken(PONTOEVIRG,';',13,209)
+LexToken(WRITELN,'writeln',14,211)
+LexToken(LPAREN,'(',14,218)
+LexToken(STRING,'A soma dos numeros e: ',14,219)
+LexToken(VIRG,',',14,243)
+LexToken(ID,'soma',14,245)
+LexToken(RPAREN,')',14,249)
+LexToken(PONTOEVIRG,';',14,250)
+LexToken(END,'end',15,252)
+LexToken(PONTO,'.',15,255)
+\end{lstlisting}
+
+Como vemos através desse output obtido, todos os tokens são corretamente identificados e classificados, validando o lexer criado, para este exemplo.
+
+% --------------------
+\subsection{Exemplo 5}
+
+Este corresponde ao mesmo exemplo do 1, mas com comentários pelo meio.
+
+\vspace{1em}
+\textbf{Código de entrada:}
+
+\begin{lstlisting}
+(*
+   comentario
+*)
+
+program exemplo;
+    var x, y: integer;
+
+    //isto aqui tambem e um comentario
+    begin
+        x := 10;
+        { isto e um 
+        comentario
+        }
+        y := x + 20;
+        writeln(y);
+    (*
+    comentario
+    *)
+    end.
+
+    (*
+    comentario
+    *)
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Elementos testados:}
+
+\begin{itemize}
+    \item Todos os tipos de comentários: em bloco, ou em linha.
+\end{itemize}
+
+\vspace{1em}
+\textbf{Tokens esperados:} espera-se que o lexer ignore completamente todos os comentários, produzindo a mesma sequência que no primeiro exemplo, a menos do número da linha. 
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+LexToken(PROGRAM,'program',7,23)
+LexToken(ID,'exemplo',7,31)
+LexToken(PONTOEVIRG,';',7,38)
+LexToken(VAR,'var',8,40)
+LexToken(ID,'x',8,44)
+LexToken(VIRG,',',8,45)
+LexToken(ID,'y',8,47)
+LexToken(DOISPONTOS,':',8,48)
+LexToken(INTEGER,'integer',8,50)
+LexToken(PONTOEVIRG,';',8,57)
+LexToken(BEGIN,'begin',11,95)
+LexToken(ID,'x',12,105)
+LexToken(ATRIBUICAO,':=',12,107)
+LexToken(NUM,10,12,110)
+LexToken(PONTOEVIRG,';',12,112)
+LexToken(ID,'y',16,156)
+LexToken(ATRIBUICAO,':=',16,158)
+LexToken(ID,'x',16,161)
+LexToken(SOMA,'+',16,163)
+LexToken(NUM,20,16,165)
+LexToken(PONTOEVIRG,';',16,167)
+LexToken(WRITELN,'writeln',17,173)
+LexToken(LPAREN,'(',17,180)
+LexToken(ID,'y',17,181)
+LexToken(RPAREN,')',17,182)
+LexToken(PONTOEVIRG,';',17,183)
+LexToken(END,'end',21,205)
+LexToken(PONTO,'.',21,208)
+\end{lstlisting}
+
+Como vemos através desse output obtido, todos os tokens são corretamente identificados e classificados, validando o lexer criado, para este exemplo.
+
+
+% ----------------------------------------------------------------------
+% ----------------------------------------------------------------------
+
+\section{Testes do Parser}
+
+A análise semântica é a segunda etapa do compilador, sendo responsável por converter a sequência de tokens obtida na fase anterior numa AST, representando a estrutra gramatical do programa.
+
+Iremos usar os mesmos códigos da fase anterior.
+
+% --------------------
+\subsection{Exemplo 1}
+
+\vspace{1em}
+\textbf{Código de entrada:}
+
+\begin{lstlisting}
+program exemplo;
+var x, y: integer;
+begin
+    x := 10;
+    y := x + 20;
+    writeln(y);
+end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+('programa', 'exemplo', 
+    [('decl', ['x', 'y'], 'integer')], 
+    ('bloco_principal', 
+    [('atribuicao', 'x', ('num', 10)), ('atribuicao', 'y', ('op', '+', ('id', 'x'), ('num', 20))), 
+    ('writeln', [('id', 'y')])]))
+\end{lstlisting}
+
+Como vemos através desse output obtido, a AST é corretamente construída. 
+
+O nó da raiz é de facto \texttt{'programa'}, contendo o nome deste. 
+
+As declarações de variáveus são agrupadas numa lista de tuplos \texttt{'decl'}.
+
+O bloco principal é representado por \texttt{'bloco\_principal'}, contendo a lista de comandos, em que temos atribuiçõres representadas por tuplos \texttt{'atribuicao'}, operações binárias em tuplos \texttt{'op'}, identificadores em tuplos \texttt{'id'} e literais numéricos em \texttt{'num'}, entre outros aspectos.
+% --------------------
+\subsection{Exemplo 2}
+
+\vspace{1em}
+\textbf{Código de entrada:}
+
+\begin{lstlisting}
+program Fatorial;
+var
+    n, i, fat: integer;
+begin
+    writeln('Introduza um numero inteiro positivo:');
+    readln(n);
+    fat := 1;
+    for i := 1 to n do
+        fat := fat * i;
+    writeln('Fatorial de ', n, ': ', fat);
+end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+('programa', 'Fatorial', 
+[('decl', ['n', 'i', 'fat'], 'integer')], 
+('bloco_principal', 
+    [('writeln', 
+    [('string', 'Introduza um numero inteiro positivo:')]), 
+    ('readln', [('id', 'n')]), 
+    ('atribuicao', 'fat', ('num', 1)), 
+    ('for_to', 'i', ('num', 1), ('id', 'n'), 
+    ('atribuicao', 'fat', ('op', '*', ('id', 'fat'), ('id', 'i')))), 
+    ('writeln', [('string', 'Fatorial de '), ('id', 'n'), ('string', ': '), ('id', 'fat')])]))
+\end{lstlisting}
+
+Como vemos através desse output obtido, a AST é corretamente construída. 
+
+O nó da raiz é de facto \texttt{'programa'}, contendo o nome deste. 
+
+As declarações de variáveus são agrupadas numa lista de tuplos \texttt{'decl'}.
+
+O bloco principal é representado por \texttt{'bloco\_principal'}, contendo a lista de comandos, em que temos atribuiçõres representadas por tuplos \texttt{'atribuicao'}, operações binárias em tuplos \texttt{'op'}, identificadores em tuplos \texttt{'id'} e literais numéricos em \texttt{'num'}, entre outros aspectos.
+
+% --------------------
+\subsection{Exemplo 3}
+
+\vspace{1em}
+\textbf{Código de entrada:}
+
+\begin{lstlisting}
+program NumeroPrimo;
+    var
+        num, i: integer;
+        primo: boolean;
+    begin
+        writeln('Introduza um numero inteiro positivo:');
+        readln(num);
+        primo := true;
+        i := 2;
+        while (i <= (num div 2)) and primo do
+        begin
+            if (num mod i) = 0 then
+            primo := false;
+            i := i + 1;
+        end;
+        if primo then
+        writeln(num, ' e um numero primo')
+        else
+        writeln(num, ' nao e um numero primo')
+    end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+('programa', 'NumeroPrimo', 
+[('decl', ['num', 'i'], 'integer'), 
+('decl', ['primo'], 'boolean')], 
+('bloco_principal', 
+    [('writeln', [('string', 'Introduza um numero inteiro positivo:')]), 
+    ('readln', [('id', 'num')]), 
+    ('atribuicao', 'primo', ('true',)), 
+    ('atribuicao', 'i', ('num', 2)), 
+    ('while', ('op', 'and', ('op', '<=', ('id', 'i'), ('op', 'div', ('id', 'num'), ('num', 2))), ('id', 'primo')), 
+    ('bloco', 
+        [('if', ('op', '=', ('op', 'mod', ('id', 'num'), ('id', 'i')), ('num', 0)), 
+        ('atribuicao', 'primo', ('false',))), 
+        ('atribuicao', 'i', ('op', '+', ('id', 'i'), ('num', 1)))])), 
+    ('ifelse', ('id', 'primo'), 
+        ('writeln', [('id', 'num'), ('string', ' e um numero primo')]), 
+        ('writeln', [('id', 'num'), ('string', ' nao e um numero primo')]))]))
+\end{lstlisting}
+
+Como vemos através desse output obtido, a AST é corretamente construída. 
+
+O nó da raiz é de facto \texttt{'programa'}, contendo o nome deste. 
+
+As declarações de variáveus são agrupadas numa lista de tuplos \texttt{'decl'}.
+
+O bloco principal é representado por \texttt{'bloco\_principal'}, contendo a lista de comandos, em que temos atribuiçõres representadas por tuplos \texttt{'atribuicao'}, operações binárias em tuplos \texttt{'op'}, identificadores em tuplos \texttt{'id'} e literais numéricos em \texttt{'num'}, entre outros aspectos.
+
+% --------------------
+\subsection{Exemplo 4}
+
+\vspace{1em}
+\textbf{Código de entrada:}
+
+\begin{lstlisting}
+program SomaArray;
+    var
+        numeros: array[1..5] of integer;
+        i, soma: integer;
+    begin
+        soma := 0;
+        writeln('Introduza 5 numeros inteiros:');
+        for i := 1 to 5 do
+            begin
+                readln(numeros[i]);
+                soma := soma + numeros[i];
+            end;
+        writeln('A soma dos numeros e: ', soma);
+    end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+('programa', 'SomaArray', 
+[('decl', ['numeros'], ('array', (1, 5), 'integer')), 
+('decl', ['i', 'soma'], 'integer')], 
+('bloco_principal', 
+    [('atribuicao', 'soma', ('num', 0)), 
+    ('writeln', [('string', 'Introduza 5 numeros inteiros:')]), 
+    ('for_to', 'i', ('num', 1), ('num', 5), 
+    ('bloco', 
+    [('readln', [('array_access', 'numeros', ('id', 'i'))]), 
+    ('atribuicao', 'soma', ('op', '+', ('id', 'soma'), ('array_access', 'numeros', ('id', 'i'))))])), 
+    ('writeln', [('string', 'A soma dos numeros e: '), ('id', 'soma')])]))
+\end{lstlisting}
+
+Como vemos através desse output obtido, a AST é corretamente construída. 
+
+O nó da raiz é de facto \texttt{'programa'}, contendo o nome deste. 
+
+As declarações de variáveus são agrupadas numa lista de tuplos \texttt{'decl'}.
+
+O bloco principal é representado por \texttt{'bloco\_principal'}, contendo a lista de comandos, em que temos atribuiçõres representadas por tuplos \texttt{'atribuicao'}, operações binárias em tuplos \texttt{'op'}, identificadores em tuplos \texttt{'id'} e literais numéricos em \texttt{'num'}, entre outros aspectos.
+
+% --------------------
+\subsection{Exemplo 5}
+
+\vspace{1em}
+\textbf{Código de entrada:}
+
+\begin{lstlisting}
+(*
+   comentario
+*)
+
+program exemplo;
+    var x, y: integer;
+
+    //isto aqui tambem e um comentario
+    begin
+        x := 10;
+        { isto e um 
+        comentario
+        }
+        y := x + 20;
+        writeln(y);
+    (*
+    comentario
+    *)
+    end.
+
+    (*
+    comentario
+    *)
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+('programa', 'exemplo', 
+[('decl', ['x', 'y'], 'integer')], 
+('bloco_principal', 
+   [('atribuicao', 'x', ('num', 10)), 
+   ('atribuicao', 'y', ('op', '+', ('id', 'x'), ('num', 20))), 
+   ('writeln', [('id', 'y')])]))
+\end{lstlisting}
+
+Como vemos através desse output obtido, a AST é corretamente construída. 
+
+O nó da raiz é de facto \texttt{'programa'}, contendo o nome deste. 
+
+As declarações de variáveus são agrupadas numa lista de tuplos \texttt{'decl'}.
+
+O bloco principal é representado por \texttt{'bloco\_principal'}, contendo a lista de comandos, em que temos atribuiçõres representadas por tuplos \texttt{'atribuicao'}, operações binárias em tuplos \texttt{'op'}, identificadores em tuplos \texttt{'id'} e literais numéricos em \texttt{'num'}, entre outros aspectos.
+
+% ----------------------------------------------------------------------
+% ----------------------------------------------------------------------
+
+\section{Testes Semânticos}
+
+A análise semântica é a terceira etapa do compilador, sendo responsável por validar a correção semântica do programa após a análise sintática ter confirmado a estrutura gramatical. 
+
+Iremos dividir esta em duas fases, em que primeiro, para os mesmos exemplos anteriores, analisamos exemplos cuja semântica está correta. Depois criamos novos exemplos, com semântica errada, de modo a mostrar que, de facto, esta fase reconhece bem vários tipos de erros semânticos.
+% --------------------
+\subsection{Semântica Correta}
+
+% --------------------
+\subsubsection{Exemplo 1}
+
+
+\vspace{1em}
+\textbf{Código de entrada:}
+
+\begin{lstlisting}
+program exemplo;
+var x, y: integer;
+begin
+    x := 10;
+    y := x + 20;
+    writeln(y);
+end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+✅ Semantica correta — nenhum erro encontrado.
+\end{lstlisting}
+
+Como vemos através desse output obtido, nenhum erro semântico foi encontrado, pelo que valida que o analisador aceita programas semanticamente corretos.
+
+% --------------------
+\subsubsection{Exemplo 2}
+
+
+\vspace{1em}
+\textbf{Código de entrada:}
+
+\begin{lstlisting}
+program Fatorial;
+var
+    n, i, fat: integer;
+begin
+    writeln('Introduza um numero inteiro positivo:');
+    readln(n);
+    fat := 1;
+    for i := 1 to n do
+        fat := fat * i;
+    writeln('Fatorial de ', n, ': ', fat);
+end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+✅ Semantica correta — nenhum erro encontrado.
+\end{lstlisting}
+
+Como vemos através desse output obtido, nenhum erro semântico foi encontrado, pelo que valida que o analisador aceita programas semanticamente corretos.
+
+
+% --------------------
+\subsubsection{Exemplo 3}
+
+\vspace{1em}
+\textbf{Código de entrada:}
+
+\begin{lstlisting}
+program NumeroPrimo;
+    var
+        num, i: integer;
+        primo: boolean;
+    begin
+        writeln('Introduza um numero inteiro positivo:');
+        readln(num);
+        primo := true;
+        i := 2;
+        while (i <= (num div 2)) and primo do
+        begin
+            if (num mod i) = 0 then
+            primo := false;
+            i := i + 1;
+        end;
+        if primo then
+        writeln(num, ' e um numero primo')
+        else
+        writeln(num, ' nao e um numero primo')
+    end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+✅ Semantica correta — nenhum erro encontrado.
+\end{lstlisting}
+
+Como vemos através desse output obtido, nenhum erro semântico foi encontrado, pelo que valida que o analisador aceita programas semanticamente corretos.
+
+% --------------------
+\subsubsection{Exemplo 4}
+
+\vspace{1em}
+\textbf{Código de entrada:}
+
+\begin{lstlisting}
+program SomaArray;
+    var
+        numeros: array[1..5] of integer;
+        i, soma: integer;
+    begin
+        soma := 0;
+        writeln('Introduza 5 numeros inteiros:');
+        for i := 1 to 5 do
+            begin
+                readln(numeros[i]);
+                soma := soma + numeros[i];
+            end;
+        writeln('A soma dos numeros e: ', soma);
+    end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+✅ Semantica correta — nenhum erro encontrado.
+\end{lstlisting}
+
+Como vemos através desse output obtido, nenhum erro semântico foi encontrado, pelo que valida que o analisador aceita programas semanticamente corretos.
+
+% --------------------
+\subsubsection{Exemplo 5}
+
+\vspace{1em}
+\textbf{Código de entrada:}
+
+\begin{lstlisting}
+(*
+   comentario
+*)
+
+program exemplo;
+    var x, y: integer;
+
+    //isto aqui tambem e um comentario
+    begin
+        x := 10;
+        { isto e um 
+        comentario
+        }
+        y := x + 20;
+        writeln(y);
+    (*
+    comentario
+    *)
+    end.
+
+    (*
+    comentario
+    *)
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+✅ Semantica correta — nenhum erro encontrado.
+\end{lstlisting}
+
+Como vemos através desse output obtido, nenhum erro semântico foi encontrado, pelo que valida que o analisador aceita programas semanticamente corretos.
+% ----------------------------
+% ----------------------------
+\subsection{Semântica Errada}
+
+Aqui apresentamos alguns exemplos de códigos em Pascal cuja semântica não se encontra correta, pelo que o analisador deve retornar erros semânticos.
+% --------------------
+\subsubsection{Exemplo 1}
+
+\vspace{1em}
+\textbf{Código de entrada:}
+
+\begin{lstlisting}
+program Ex1;
+var x: integer;
+begin
+    x := 10;
+    y := 5;   { ERRO: y não foi declarada }
+end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+❌ Erros semânticos detetados:
+
+Erros semânticos encontrados:
+- Atribuição a variável não declarada 'y'.
+\end{lstlisting}
+
+Aqui nós devemos ter um erro semântico, uma vez que usamos uma variável que não foi declarada.
+
+Como vemos através do output, de facto o analisador semântico identifica exatamente esse erro, pelo que podemos afirmar que ele valida bem este tipo de erros.
+
+% --------------------
+\subsubsection{Exemplo 2}
+
+\begin{lstlisting}
+program Ex2;
+var
+    x: integer;
+    x: real;   { ERRO: redeclaração }
+begin
+    x := 3;
+end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+❌ Erros semânticos detetados:
+
+Erros semânticos encontrados:
+- Variável 'x' já declarada.
+\end{lstlisting}
+
+Aqui nós devemos ter um erro semântico, uma vez que declaramos duas vezes a mesma variável.
+
+Como vemos através do output, de facto o analisador semântico identifica exatamente esse erro, pelo que podemos afirmar que ele valida bem este tipo de erros.
+
+% --------------------
+\subsubsection{Exemplo 3}
+
+\begin{lstlisting}
+program Ex3;
+var
+    x: integer;
+begin
+    x := true;   { ERRO: tipos incompatíveis }
+end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+❌ Erros semânticos detetados:
+
+Erros semânticos encontrados:
+- Incompatibilidade de tipos na atribuição a 'x': variável é 'integer' mas expressão é 'boolean'.
+\end{lstlisting}
+
+Aqui nós devemos ter um erro semântico, uma vez que atribuimos uma expressão de um tipo, a uma variável que é de outro tipo.
+
+Como vemos através do output, de facto o analisador semântico identifica exatamente esse erro, pelo que podemos afirmar que ele valida bem este tipo de erros.
+
+% --------------------
+\subsubsection{Exemplo 4}
+
+\begin{lstlisting}
+program Ex4;
+var
+    s: string;
+    x: integer;
+begin
+    s := 'ola';
+    x := 5 + s;   { ERRO: não pode somar string com integer }
+end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+❌ Erros semânticos detetados:
+
+Erros semânticos encontrados:
+- Operador '+' exige operandos numéricos (integer/real). Obteve: 'integer' e 'string'.
+\end{lstlisting}
+
+Aqui nós devemos ter um erro semântico, uma vez que se tenta fazer uma operação aritmética entre tipos que são incompatíveis.
+
+Como vemos através do output, de facto o analisador semântico identifica exatamente esse erro, pelo que podemos afirmar que ele valida bem este tipo de erros.
+
+% --------------------
+\subsubsection{Exemplo 5}
+
+
+\begin{lstlisting}
+program Ex5;
+var
+    x, y: integer;
+begin
+    x := 3;
+    y := 4;
+    if x and y then   { ERRO: and só aceita boolean }
+        writeln('OK');
+end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+❌ Erros semânticos detetados:
+
+Erros semânticos encontrados:
+- Operador lógico 'and' exige operandos boolean (obtido 'integer' e 'integer').
+- Condição do IF deve ser boolean, obteve 'None'.
+\end{lstlisting}
+
+Aqui nós devemos ter um erro semântico, uma vez que se tenta usar um operador lógico com operandos que não são booleanos.
+
+Como vemos através do output, de facto o analisador semântico identifica exatamente esse erro, pelo que podemos afirmar que ele valida bem este tipo de erros.
+% --------------------
+\subsubsection{Exemplo 6}
+
+\begin{lstlisting}
+program Ex6;
+var
+    x: integer;
+begin
+    x := 10;
+    if x then   { ERRO: IF exige boolean }
+        writeln('ok');
+end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+❌ Erros semânticos detetados:
+
+Erros semânticos encontrados:
+- Condição do IF deve ser boolean, obteve 'integer'.
+\end{lstlisting}
+
+Aqui nós devemos ter um erro semântico, uma vez que a condição do if não é um booleano.
+
+Como vemos através do output, de facto o analisador semântico identifica exatamente esse erro, pelo que podemos afirmar que ele valida bem este tipo de erros.
+
+% --------------------
+\subsubsection{Exemplo 7}
+
+\begin{lstlisting}
+program Ex7;
+var
+    n: integer;
+begin
+    n := 0;
+    while n do      { ERRO }
+        n := n + 1;
+end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+❌ Erros semânticos detetados:
+
+Erros semânticos encontrados:
+- Condição do WHILE deve ser boolean, obteve 'integer'.
+\end{lstlisting}
+
+Aqui nós devemos ter um erro semântico, uma vez que a condição do while não é um integer.
+
+Como vemos através do output, de facto o analisador semântico identifica exatamente esse erro, pelo que podemos afirmar que ele valida bem este tipo de erros.
+% --------------------
+\subsubsection{Exemplo 8}
+
+\begin{lstlisting}
+program Ex8;
+var
+    x: integer;
+begin
+    for i := 1 to 10 do   { ERRO: i não existe }
+        x := x + 1;
+end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+❌ Erros semânticos detetados:
+
+Erros semânticos encontrados:
+- Variável de controlo do FOR 'i' não declarada.
+\end{lstlisting}
+
+Aqui nós devemos ter um erro semântico, uma vez que o for usa uma variável que não foi declarada.
+
+Como vemos através do output, de facto o analisador semântico identifica exatamente esse erro, pelo que podemos afirmar que ele valida bem este tipo de erros.
+% --------------------
+\subsubsection{Exemplo 9}
+
+\begin{lstlisting}
+program Ex9;
+var
+    b: boolean;
+begin
+    for b := true to false do   { ERRO: controle do for deve ser integer }
+        writeln('oi');
+end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+❌ Erros semânticos detetados:
+
+Erros semânticos encontrados:
+- Variável de controlo do FOR 'b' deve ser integer.
+- Expressões de início/fim do FOR devem ser integer (obtido: boolean, boolean).
+\end{lstlisting}
+
+Aqui nós devemos ter um erro semântico, uma vez que o for usa uma variável que não é inteira, e as expressões de ínicio e fim deste também não são inteiras.
+
+Como vemos através do output, de facto o analisador semântico identifica exatamente esse erro, pelo que podemos afirmar que ele valida bem este tipo de erros.
+% --------------------
+\subsubsection{Exemplo 10}
+
+\begin{lstlisting}
+program Ex10;
+var
+    i: integer;
+begin
+    for i := 1.5 to 10 do   { ERRO: limites devem ser integer }
+        writeln(i);
+end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+❌ Erros semânticos detetados:
+
+Erros semânticos encontrados:
+- Expressões de início/fim do FOR devem ser integer (obtido: real, integer).
+\end{lstlisting}
+
+Aqui nós devemos ter um erro semântico, uma vez que o for usa expressões de ínicio e fim deste também não são inteiras.
+
+Como vemos através do output, de facto o analisador semântico identifica exatamente esse erro, pelo que podemos afirmar que ele valida bem este tipo de erros.
+% --------------------
+\subsubsection{Exemplo 11}
+
+\begin{lstlisting}
+program Ex11;
+var
+    x: integer;
+begin
+    x := numeros[3];   { ERRO: numeros não existe }
+end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+❌ Erros semânticos detetados:
+
+Erros semânticos encontrados:
+- Acesso a array não declarado 'numeros'.
+\end{lstlisting}
+
+Aqui nós devemos ter um erro semântico, uma vez que se tenta aceder a um array não declarado.
+
+Como vemos através do output, de facto o analisador semântico identifica exatamente esse erro, pelo que podemos afirmar que ele valida bem este tipo de erros.
+% --------------------
+\subsubsection{Exemplo 12}
+
+\begin{lstlisting}
+program Ex12;
+var
+    x: integer;
+begin
+    x := x[1];  { ERRO: x não é array }
+end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+❌ Erros semânticos detetados:
+
+Erros semânticos encontrados:
+- Identificador 'x' não é um array.
+\end{lstlisting}
+
+Aqui nós devemos ter um erro semântico, uma vez que tenta aceder a algo que não é um array.
+
+Como vemos através do output, de facto o analisador semântico identifica exatamente esse erro, pelo que podemos afirmar que ele valida bem este tipo de erros.
+% --------------------
+\subsubsection{Exemplo 13}
+
+\begin{lstlisting}
+program Ex13;
+var
+    arr: array[1..5] of integer;
+begin
+    arr['a'] := 3;   { ERRO: índice deve ser integer }
+end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+❌ Erros semânticos detetados:
+
+Erros semânticos encontrados:
+- Índice do array 'arr' deve ser integer, obteve 'string'.
+\end{lstlisting}
+
+Aqui nós devemos ter um erro semântico, uma vez que o índice do array a que quer se aceder não é um inteiro.
+
+Como vemos através do output, de facto o analisador semântico identifica exatamente esse erro, pelo que podemos afirmar que ele valida bem este tipo de erros.
+% --------------------
+\subsubsection{Exemplo 14}
+
+\begin{lstlisting}
+program Ex14;
+var
+    arr: array[2..4] of integer;
+begin
+    arr[1] := 5;   { ERRO: 1 está fora de 2..4 }
+end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+❌ Erros semânticos detetados:
+
+Erros semânticos encontrados:
+- Índice 1 fora dos limites do array 'arr' [2..4].
+\end{lstlisting}
+
+Aqui nós devemos ter um erro semântico, uma vez que o índice do array a que quer se aceder está fora dos limites desse array.
+
+Como vemos através do output, de facto o analisador semântico identifica exatamente esse erro, pelo que podemos afirmar que ele valida bem este tipo de erros.
+% --------------------
+\subsubsection{Exemplo 15}
+
+\begin{lstlisting}
+program Ex15;
+var
+    arr: array[1..3] of integer;
+begin
+    arr[2] := 'ola';   { ERRO: array espera integer }
+end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+❌ Erros semânticos detetados:
+
+Erros semânticos encontrados:
+- Tipo incompatível na atribuição ao array 'arr': elemento é 'integer', expressão é 'string'.
+\end{lstlisting}
+
+Aqui nós devemos ter um erro semântico, uma vez que se atribui a um elemento do array uma expressão que não equivale ao seu tipo.
+
+Como vemos através do output, de facto o analisador semântico identifica exatamente esse erro, pelo que podemos afirmar que ele valida bem este tipo de erros.
+
+% --------------------
+\subsubsection{Exemplo 16}
+
+\begin{lstlisting}
+program Ex16;
+var
+    x: inteiro;   { ERRO: tipo não existe }
+begin
+    x := 5;
+end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+Erro de sintaxe na linha 4: token 'ID' com valor 'inteiro'
+❌ Erros semânticos detetados:
+
+Erros semânticos encontrados:
+- AST inválida: nó raiz não é 'programa'.
+\end{lstlisting}
+
+Aqui nós devemos ter um erro semântico, uma vez que se atribui a uma variável um tipo que não se conhece.
+
+Como vemos através do output, de facto o analisador semântico identifica exatamente esse erro, pelo que podemos afirmar que ele valida bem este tipo de erros.
+% --------------------
+\subsubsection{Exemplo 17}
+
+\begin{lstlisting}
+program Ex17;
+var
+    arr: array[1..3] of integer;
+begin
+    writeln(arr);   { ERRO: não podes imprimir arrays }
+end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+❌ Erros semânticos detetados:
+
+Erros semânticos encontrados:
+- writeln: tipo não imprimível 'array' (expr ('id', 'arr')).
+\end{lstlisting}
+
+Aqui nós devemos ter um erro semântico, uma vez que se tenta imprimir algo não imprimível com writeln.
+
+Como vemos através do output, de facto o analisador semântico identifica exatamente esse erro, pelo que podemos afirmar que ele valida bem este tipo de erros.
+% --------------------
+\subsubsection{Exemplo 18}
+
+\begin{lstlisting}
+program Ex18;
+var
+    x: real;
+    arr: array[1..3] of boolean;
+begin
+    y := 10;                { y não declarado }
+    x := arr;               { tipos incompatíveis }
+    arr[1.5] := true;       { índice não-inteiro }
+    if x then writeln('x'); { condição não-boolean }
+end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+❌ Erros semânticos detetados:
+
+Erros semânticos encontrados:
+- Atribuição a variável não declarada 'y'.
+- Incompatibilidade de tipos na atribuição a 'x': variável é 'real' mas expressão é 'array'.
+- Índice do array 'arr' deve ser integer, obteve 'real'.
+- Condição do IF deve ser boolean, obteve 'real'.
+
+\end{lstlisting}
+
+Aqui nós devemos ter vários erros semânticos, uma vez que se: usa uma variável não declarada, atribui-se tipos incompatíveis, tenta-se aceder a um índice não inteiro do array, e usa-se uma condição não booleana. 
+
+Este exemplo serve para testar que o analisador consegue identificar vários tipos de erros.
+
+Como vemos através do output, de facto o analisador semântico identifica exatamente esse erro, pelo que podemos afirmar que ele valida bem este tipo de erros.
+
+% ----------------------------------------------------------------------
+% ----------------------------------------------------------------------
+\section{Testes do Gerador de Código (MV)}
+
+A geração de código para a máquina virtual é a última etapa do compilador, responsável por pegar no código original em pascal, depois deste ter passado pelas outras fases, e transformá-lo em instruções para a VM dada no enunciado do projeto. 
+
+Iremos usar os mesmos cinco exemplos usados nas outras fases.
+% --------------------
+\subsection{Exemplo 1}
+
+\vspace{1em}
+\textbf{Código de entrada:}
+
+\begin{lstlisting}
+program exemplo;
+var x, y: integer;
+begin
+    x := 10;
+    y := x + 20;
+    writeln(y);
+end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+START
+PUSHI 10
+STOREL 0
+PUSHL 0
+PUSHI 20
+ADD
+STOREL 1
+PUSHL 1
+WRITEI
+WRITELN
+STOP
+\end{lstlisting}
+
+Aqui vemos que de facto obtemos instruções na linguagem da VM. Se colocarmos esse código resultante na máquina virtual, vemos que obtemos o seguinte, que confirma a correta escolha das instruções por parte desta fase e que, de facto, estas instruções fazem o que o código original em Pascal faz.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{VM-ex1.png}
+  \label{fig:VM-ex1}
+\end{figure}
+
+
+% --------------------
+\subsection{Exemplo 2}
+
+\vspace{1em}
+\textbf{Código de entrada:}
+
+\begin{lstlisting}
+program Fatorial;
+var
+    n, i, fat: integer;
+begin
+    writeln('Introduza um numero inteiro positivo:');
+    readln(n);
+    fat := 1;
+    for i := 1 to n do
+        fat := fat * i;
+    writeln('Fatorial de ', n, ': ', fat);
+end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+START
+PUSHS "Introduza um número inteiro positivo:"
+WRITES
+WRITELN
+READ
+ATOI
+STOREL 0
+PUSHI 1
+STOREL 2
+PUSHI 1
+STOREL 1
+LOOP1:
+PUSHL 1
+PUSHL 0
+INFEQ
+JZ END2
+PUSHL 2
+PUSHL 1
+MUL
+STOREL 2
+PUSHL 1
+PUSHI 1
+ADD
+STOREL 1
+JUMP LOOP1
+END2:
+PUSHS "Fatorial de "
+WRITES
+PUSHL 0
+WRITEI
+PUSHS ": "
+WRITES
+PUSHL 2
+WRITEI
+WRITELN
+STOP
+\end{lstlisting}
+
+Aqui vemos que de facto obtemos instruções na linguagem da VM. Se colocarmos esse código resultante na máquina virtual, vemos que obtemos o seguinte, que confirma a correta escolha das instruções por parte desta fase e que, de facto, estas instruções fazem o que o código original em Pascal faz.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{VM-ex2.png}
+  \label{fig:VM-ex1}
+\end{figure}
+
+% --------------------
+\subsection{Exemplo 3}
+
+\vspace{1em}
+\textbf{Código de entrada:}
+
+\begin{lstlisting}
+program NumeroPrimo;
+    var
+        num, i: integer;
+        primo: boolean;
+    begin
+        writeln('Introduza um numero inteiro positivo:');
+        readln(num);
+        primo := true;
+        i := 2;
+        while (i <= (num div 2)) and primo do
+        begin
+            if (num mod i) = 0 then
+            primo := false;
+            i := i + 1;
+        end;
+        if primo then
+        writeln(num, ' e um numero primo')
+        else
+        writeln(num, ' nao e um numero primo')
+    end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+START
+PUSHS "Introduza um número inteiro positivo:"
+WRITES
+WRITELN
+READ
+ATOI
+STOREL 0
+PUSHI 1
+STOREL 2
+PUSHI 2
+STOREL 1
+WHILE1:
+PUSHL 1
+PUSHL 0
+PUSHI 2
+DIV
+INFEQ
+PUSHL 2
+AND
+JZ END2
+PUSHL 0
+PUSHL 1
+MOD
+PUSHI 0
+EQUAL
+JZ ELSE3
+PUSHI 0
+STOREL 2
+JUMP ENDIF4
+ELSE3:
+ENDIF4:
+PUSHL 1
+PUSHI 1
+ADD
+STOREL 1
+JUMP WHILE1
+END2:
+PUSHL 2
+JZ ELSE5
+PUSHL 0
+WRITEI
+PUSHS " é um número primo"
+WRITES
+WRITELN
+JUMP ENDIF6
+ELSE5:
+PUSHL 0
+WRITEI
+PUSHS " não é um número primo"
+WRITES
+WRITELN
+ENDIF6:
+STOP
+\end{lstlisting}
+
+Aqui vemos que de facto obtemos instruções na linguagem da VM. Se colocarmos esse código resultante na máquina virtual, vemos que obtemos o seguinte, que confirma a correta escolha das instruções por parte desta fase e que, de facto, estas instruções fazem o que o código original em Pascal faz.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{VM-ex3.png}
+  \label{fig:VM-ex1}
+\end{figure}
+% --------------------
+\subsection{Exemplo 4}
+
+\vspace{1em}
+\textbf{Código de entrada:}
+
+\begin{lstlisting}
+program SomaArray;
+    var
+        numeros: array[1..5] of integer;
+        i, soma: integer;
+    begin
+        soma := 0;
+        writeln('Introduza 5 numeros inteiros:');
+        for i := 1 to 5 do
+            begin
+                readln(numeros[i]);
+                soma := soma + numeros[i];
+            end;
+        writeln('A soma dos numeros e: ', soma);
+    end.
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+START
+PUSHI 0
+STOREL 6
+PUSHS "Introduza 5 números inteiros:"
+WRITES
+WRITELN
+PUSHI 1
+STOREL 5
+LOOP1:
+PUSHL 5
+PUSHI 5
+INFEQ
+JZ END2
+PUSHFP
+PUSHI 0
+PADD
+PUSHL 5
+PUSHI 1
+SUB
+PADD
+READ
+ATOI
+STORE 0
+PUSHL 6
+PUSHFP
+PUSHI 0
+PADD
+PUSHL 5
+PUSHI 1
+SUB
+PADD
+LOAD 0
+ADD
+STOREL 6
+PUSHL 5
+PUSHI 1
+ADD
+STOREL 5
+JUMP LOOP1
+END2:
+PUSHS "A soma dos números é: "
+WRITES
+PUSHL 6
+WRITEI
+WRITELN
+STOP
+\end{lstlisting}
+
+Aqui vemos que de facto obtemos instruções na linguagem da VM. Se colocarmos esse código resultante na máquina virtual, vemos que obtemos o seguinte, que confirma a correta escolha das instruções por parte desta fase e que, de facto, estas instruções fazem o que o código original em Pascal faz.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{VM-ex4.png}
+  \label{fig:VM-ex1}
+\end{figure}
+
+% --------------------
+\subsection{Exemplo 5}
+
+\vspace{1em}
+\textbf{Código de entrada:}
+
+\begin{lstlisting}
+(*
+   comentario
+*)
+
+program exemplo;
+    var x, y: integer;
+
+    //isto aqui tambem e um comentario
+    begin
+        x := 10;
+        { isto e um 
+        comentario
+        }
+        y := x + 20;
+        writeln(y);
+    (*
+    comentario
+    *)
+    end.
+
+    (*
+    comentario
+    *)
+\end{lstlisting}
+
+\vspace{1em}
+\textbf{Resultado:} 
+
+\begin{lstlisting}
+START
+PUSHI 10
+STOREL 0
+PUSHL 0
+PUSHI 20
+ADD
+STOREL 1
+PUSHL 1
+WRITEI
+WRITELN
+STOP
+\end{lstlisting}
+
+Aqui vemos que de facto obtemos instruções na linguagem da VM. Se colocarmos esse código resultante na máquina virtual, vemos que obtemos o seguinte, que confirma a correta escolha das instruções por parte desta fase e que, de facto, estas instruções fazem o que o código original em Pascal faz.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{VM-ex5.png}
+  \label{fig:VM-ex1}
+\end{figure}
+
+
+% ----------------------------------------------------------------------
+% ----------------------------------------------------------------------
+\chapter{Conclusão}
+O trabalho desenvolvido permitiu a construção de um compilador capaz de traduzir programas escritos em \textit{Pascal Standard} para código executável numa máquina virtual. A implementação seguiu a arquitetura clássica de compiladores, com fases bem definidas de análise léxica, análise sintática, análise semântica e geração de código.
+
+Durante o desenvolvimento, foi possível perceber a importância de cada fase na deteção e prevenção de erros, bem como a necessidade de um planeamento cuidadoso da estrutura do compilador para garantir modularidade e facilidade de manutenção. A utilização da biblioteca \textit{PLY} em Python facilitou a implementação das fases de análise léxica e sintática, permitindo focar nos aspetos semânticos e na geração de código para a máquina virtual.
+
+A fase de geração de código mostrou-se particularmente crítica, exigindo atenção à conversão de tipos, à correta gestão de variáveis e arrays, e ao controlo do fluxo de execução em estruturas condicionais e ciclos. A abordagem modular adotada assegurou que cada componente pudesse ser testado independentemente, aumentando a robustez do compilador.
+
+Em síntese, este trabalho permitiu consolidar conhecimentos de compiladores, reforçando competências em análise de linguagens, estruturas de dados, árvores sintáticas e tradução de programas para uma máquina virtual. Para trabalhos futuros, seria interessante explorar otimizações do código gerado e expandir o suporte a mais funcionalidades da linguagem Pascal.
+
+
+\end{document}
