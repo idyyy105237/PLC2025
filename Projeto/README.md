@@ -1,19 +1,17 @@
-# Compilador para Pascal Standard – Síntese do Projeto
+# Compilador para Pascal Standard
 
-O projeto consistiu na implementação de um compilador para a linguagem **Pascal Standard**, desenvolvido em **Python** utilizando a biblioteca **PLY (Python Lex-Yacc)** para análise léxica e sintática.
+Este projeto descreve o desenvolvimento de um compilador para a linguagem **Pascal Standard**, implementado em **Python** com a biblioteca **PLY (Python Lex-Yacc)**.
 
-O compilador segue a estrutura clássica:
+O compilador suporta um subconjunto representativo da linguagem, incluindo:  
+- Declarações de variáveis e arrays  
+- Expressões aritméticas, relacionais e lógicas  
+- Estruturas de controlo (`if`, `while`, `for`)  
+- Operações básicas de entrada e saída (`readln`, `writeln`)  
 
-- **Análise Léxica (Lexer)**:  
-  Converte o código-fonte em tokens, identificando palavras reservadas, operadores, identificadores, constantes e delimitadores, e detectando erros léxicos.
+O processo de compilação inclui:  
+1. **Análise léxica**: identificação de tokens a partir do código fonte  
+2. **Análise sintática**: construção da **Árvore Sintática Abstrata (AST)**  
+3. **Análise semântica**: validação de tipos, declaração prévia de variáveis e consistência de escopos, utilizando uma **tabela de símbolos**  
+4. **Geração de código para máquina virtual**: tradução da AST em instruções executáveis, respeitando a semântica do programa  
 
-- **Análise Sintática (Parser)**:  
-  Verifica se a sequência de tokens obedece à gramática da linguagem, construindo a **Árvore Sintática Abstrata (AST)**. Os blocos e comandos (atribuições, ciclos, condicionais) são processados nesta fase.
-
-- **Análise Semântica**:  
-  Valida a correção semântica do programa, garantindo compatibilidade de tipos, declaração prévia de variáveis e consistência de escopos. Erros semânticos são reportados com linha e contexto. A tabela de símbolos é construída com informações sobre variáveis, arrays (`lower`, `upper`, tamanho) e **offsets** para alocação de memória.
-
-- **Geração de Código para Máquina Virtual (MV)**:  
-  A AST é percorrida recursivamente, produzindo instruções de baixo nível que preservam a semântica do programa. Estruturas de controlo, expressões e operações de entrada/saída são traduzidas em instruções, utilizando offsets e etiquetas para gerir memória e fluxo de execução.
-
-O compilador é **modular**, permitindo testes e manutenção independentes de cada fase. A execução final ocorre numa **máquina virtual fornecida**, garantindo que programas válidos são corretamente processados.
+O compilador é modular, permitindo testes e manutenção independentes de cada fase, e produz código que pode ser executado numa **máquina virtual fornecida**.
